@@ -41,20 +41,24 @@ export interface FoodNutrientSource {
   description?: string;
 }
 
-// Tipos de alimentos
-export interface AbridgedFoodItem {
+// Tipos de alimentos base
+export interface BaseFoodItem {
   fdcId: number;
   dataType: string;
   description: string;
-  foodNutrients?: AbridgedFoodNutrient[];
   publicationDate?: string;
+  foodNutrients?: (AbridgedFoodNutrient | FoodNutrient)[];
+}
+
+export interface AbridgedFoodItem extends BaseFoodItem {
   brandOwner?: string;
   gtinUpc?: string;
   ndbNumber?: string;
   foodCode?: string;
+  foodNutrients?: AbridgedFoodNutrient[];
 }
 
-export interface BrandedFoodItem extends AbridgedFoodItem {
+export interface BrandedFoodItem extends BaseFoodItem {
   availableDate?: string;
   brandOwner?: string;
   dataSource?: string;
@@ -68,6 +72,19 @@ export interface BrandedFoodItem extends AbridgedFoodItem {
   brandedFoodCategory?: string;
   foodNutrients?: FoodNutrient[];
   labelNutrients?: any;
+}
+
+export interface FoundationFoodItem extends BaseFoodItem {
+  ndbNumber?: string;
+  scientificName?: string;
+  foodCategory?: {
+    id?: number;
+    code?: string;
+    description?: string;
+  };
+  foodNutrients?: FoodNutrient[];
+  nutrientConversionFactors?: any[];
+  isHistoricalReference?: boolean;
 }
 
 // Criterios de búsqueda
@@ -129,4 +146,22 @@ export interface SearchResultFood {
   score?: number;
 }
 
-export type FoodItem = AbridgedFoodItem | BrandedFoodItem;
+// Tipo unión para los diferentes tipos de alimentos
+export type FoodItem = AbridgedFoodItem | BrandedFoodItem | FoundationFoodItem;
+
+// Type guards para verificar el tipo de alimento
+export const isBrandedFoodItem = (food: FoodItem): food is BrandedFoodItem => {
+  return food.dataType === "Branded" || "ingredients" in food;
+};
+
+export const isFoundationFoodItem = (
+  food: FoodItem
+): food is FoundationFoodItem => {
+  return food.dataType === "Foundation" || "scientificName" in food;
+};
+
+export const isAbridgedFoodItem = (
+  food: FoodItem
+): food is AbridgedFoodItem => {
+  return !isBrandedFoodItem(food) && !isFoundationFoodItem(food);
+};
