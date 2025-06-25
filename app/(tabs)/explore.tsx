@@ -4,7 +4,9 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useFruitStore } from "@/stores/fruitStore";
 import { Fruit } from "@/types/fruit";
-import { useFocusEffect } from "@react-navigation/native";
+import { ExploreStackParamList } from "@/types/navigation";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 import React, { useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -16,8 +18,14 @@ import {
   Text,
 } from "react-native-paper";
 
+type ExploreScreenNavigationProp = StackNavigationProp<
+  ExploreStackParamList,
+  "ExploreMain"
+>;
+
 export default function ExploreScreen() {
   const { theme } = useTheme();
+  const navigation = useNavigation();
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isScreenFocused, setIsScreenFocused] = React.useState(false);
@@ -57,10 +65,11 @@ export default function ExploreScreen() {
   };
 
   const handleFruitPress = (fruit: Fruit) => {
-    showMessage(`Seleccionaste: ${fruit.name} 🍎`);
+    showMessage(`Navegando a: ${fruit.name} 🍎`);
     console.log("Fruit selected:", fruit);
-  };
 
+    (navigation as any).navigate("FruitDetails", { fruitName: fruit.name });
+  };
   const showMessage = (message: string) => {
     setSnackbarMessage(message);
     setShowSnackbar(true);

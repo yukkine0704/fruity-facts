@@ -1,108 +1,56 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider as NavigationThemeProvider,
-} from "@react-navigation/native";
-import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "@/contexts/ThemeContext";
+import React from "react";
+import { BottomNavigation } from "react-native-paper";
 
-import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
-import { useColorScheme } from "@/hooks/useColorScheme";
+const HomeScreen = React.lazy(() => import("./(tabs)/index"));
+const ExploreStack = React.lazy(() => import("./(tabs)/explore/_layout"));
 
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-  const { theme, isDarkMode } = useTheme();
+const MemoizedHomeScreen = React.memo(HomeScreen);
+const MemoizedExploreStack = React.memo(ExploreStack);
 
-  const FruityLightNavigationTheme = {
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      primary: theme.colors.primary,
-      background: theme.colors.background,
-      card: theme.colors.surface,
-      text: theme.colors.onSurface,
-      border: theme.colors.outlineVariant,
-      notification: theme.colors.secondary,
+export default function TabLayout() {
+  const { theme } = useTheme();
+  const [index, setIndex] = React.useState(0);
+
+  const routes = [
+    {
+      key: "home",
+      title: "Inicio",
+      focusedIcon: "home",
+      unfocusedIcon: "home-outline",
     },
-  };
-
-  const FruityDarkNavigationTheme = {
-    ...DarkTheme,
-    colors: {
-      ...DarkTheme.colors,
-      primary: theme.colors.primary,
-      background: theme.colors.background,
-      card: theme.colors.surface,
-      text: theme.colors.onSurface,
-      border: theme.colors.outlineVariant,
-      notification: theme.colors.secondary,
+    {
+      key: "explore",
+      title: "Explorar",
+      focusedIcon: "compass",
+      unfocusedIcon: "compass-outline",
     },
-  };
+  ];
 
-  const navigationTheme = isDarkMode
-    ? FruityDarkNavigationTheme
-    : FruityLightNavigationTheme;
+  const renderScene = React.useCallback(({ route }: { route: any }) => {
+    switch (route.key) {
+      case "home":
+        return <MemoizedHomeScreen />;
+      case "explore":
+        return <MemoizedExploreStack />;
+      default:
+        return null;
+    }
+  }, []);
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.background,
+    <BottomNavigation
+      navigationState={{ index, routes }}
+      onIndexChange={setIndex}
+      renderScene={renderScene}
+      activeColor={theme.colors.primary}
+      inactiveColor={theme.colors.onSurfaceVariant}
+      barStyle={{
+        backgroundColor: theme.colors.surface,
+        borderTopColor: theme.colors.outline,
+        borderTopWidth: 0.5,
       }}
-    >
-      <StatusBar
-        style={isDarkMode ? "light" : "dark"}
-        backgroundColor={theme.colors.background}
-        translucent={false}
-      />
-      <NavigationThemeProvider value={navigationTheme}>
-        <Stack
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: theme.colors.surface,
-            },
-            headerTintColor: theme.colors.onSurface,
-            headerTitleStyle: {
-              fontWeight: "bold",
-            },
-            headerShadowVisible: false,
-          }}
-        >
-          <Stack.Screen
-            name="(tabs)"
-            options={{
-              headerShown: false,
-              title: "Fruity Facts",
-            }}
-          />
-          <Stack.Screen
-            name="+not-found"
-            options={{
-              title: "Página no encontrada",
-              presentation: "modal",
-            }}
-          />
-        </Stack>
-      </NavigationThemeProvider>
-    </SafeAreaView>
-  );
-}
-
-export default function RootLayout() {
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  });
-
-  if (!loaded) {
-    return null;
-  }
-
-  return (
-    <ThemeProvider>
-      <RootLayoutNav />
-    </ThemeProvider>
+      sceneAnimationType="shifting"
+    />
   );
 }

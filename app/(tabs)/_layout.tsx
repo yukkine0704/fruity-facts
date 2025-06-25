@@ -1,12 +1,15 @@
 import { useTheme } from "@/contexts/ThemeContext";
+import { createStackNavigator } from "@react-navigation/stack";
 import React from "react";
 import { BottomNavigation } from "react-native-paper";
 
 const HomeScreen = React.lazy(() => import("./index"));
-const ExploreScreen = React.lazy(() => import("./explore"));
+const ExploreStack = React.lazy(() => import("./explore/_layout"));
 
 const MemoizedHomeScreen = React.memo(HomeScreen);
-const MemoizedExploreScreen = React.memo(ExploreScreen);
+const MemoizedExploreStack = React.memo(ExploreStack);
+
+const Stack = createStackNavigator();
 
 export default function TabLayout() {
   const { theme } = useTheme();
@@ -32,7 +35,7 @@ export default function TabLayout() {
       case "home":
         return <MemoizedHomeScreen />;
       case "explore":
-        return <MemoizedExploreScreen />;
+        return <MemoizedExploreStack />;
       default:
         return null;
     }
