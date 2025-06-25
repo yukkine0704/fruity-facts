@@ -4,14 +4,23 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useFruitStore } from "@/stores/fruitStore";
 import { Fruit } from "@/types/fruit";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { Button, FAB, Snackbar, Surface, Text } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Button,
+  FAB,
+  Snackbar,
+  Surface,
+  Text,
+} from "react-native-paper";
 
 export default function ExploreScreen() {
   const { theme } = useTheme();
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [isScreenFocused, setIsScreenFocused] = React.useState(false);
 
   const {
     fruits,
@@ -23,9 +32,15 @@ export default function ExploreScreen() {
     nutritionStats,
   } = useFruitStore();
 
-  useEffect(() => {
-    loadFruits();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      setIsScreenFocused(true);
+      loadFruits();
+      return () => {
+        setIsScreenFocused(false);
+      };
+    }, [])
+  );
 
   const loadFruits = async () => {
     try {
@@ -242,6 +257,16 @@ export default function ExploreScreen() {
       </View>
     );
   };
+
+  if (!isScreenFocused) {
+    return (
+      <View
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+      >
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View

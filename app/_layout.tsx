@@ -42,10 +42,9 @@ function RootLayoutNav() {
     },
   };
 
-  const navigationTheme =
-    colorScheme === "dark"
-      ? FruityDarkNavigationTheme
-      : FruityLightNavigationTheme;
+  const navigationTheme = isDarkMode
+    ? FruityDarkNavigationTheme
+    : FruityLightNavigationTheme;
 
   return (
     <SafeAreaView

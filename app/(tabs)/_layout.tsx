@@ -1,61 +1,56 @@
-import { Tabs } from "expo-router";
-import React from "react";
-import { Platform } from "react-native";
-
-import { HapticTab } from "@/components/HapticTab";
-import { IconSymbol } from "@/components/ui/IconSymbol";
-import TabBarBackground from "@/components/ui/TabBarBackground";
 import { useTheme } from "@/contexts/ThemeContext";
+import React from "react";
+import { BottomNavigation } from "react-native-paper";
+
+const HomeScreen = React.lazy(() => import("./index"));
+const ExploreScreen = React.lazy(() => import("./explore"));
+
+const MemoizedHomeScreen = React.memo(HomeScreen);
+const MemoizedExploreScreen = React.memo(ExploreScreen);
 
 export default function TabLayout() {
   const { theme } = useTheme();
+  const [index, setIndex] = React.useState(0);
+
+  const routes = [
+    {
+      key: "home",
+      title: "Inicio",
+      focusedIcon: "home",
+      unfocusedIcon: "home-outline",
+    },
+    {
+      key: "explore",
+      title: "Explorar",
+      focusedIcon: "compass",
+      unfocusedIcon: "compass-outline",
+    },
+  ];
+
+  const renderScene = React.useCallback(({ route }: { route: any }) => {
+    switch (route.key) {
+      case "home":
+        return <MemoizedHomeScreen />;
+      case "explore":
+        return <MemoizedExploreScreen />;
+      default:
+        return null;
+    }
+  }, []);
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: "absolute",
-            backgroundColor: theme.colors.surface + "E6", // 90% opacity
-            borderTopColor: theme.colors.outline,
-            borderTopWidth: 0.5,
-          },
-          default: {
-            backgroundColor: theme.colors.surface,
-            borderTopColor: theme.colors.outline,
-            borderTopWidth: 0.5,
-            elevation: 8,
-            shadowColor: theme.colors.shadow,
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-          },
-        }),
+    <BottomNavigation
+      navigationState={{ index, routes }}
+      onIndexChange={setIndex}
+      renderScene={renderScene}
+      activeColor={theme.colors.primary}
+      inactiveColor={theme.colors.onSurfaceVariant}
+      barStyle={{
+        backgroundColor: theme.colors.surface,
+        borderTopColor: theme.colors.outline,
+        borderTopWidth: 0.5,
       }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Inicio",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: "Explorar",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      sceneAnimationType="shifting"
+    />
   );
 }
