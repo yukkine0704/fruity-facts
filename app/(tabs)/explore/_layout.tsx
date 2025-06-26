@@ -1,4 +1,4 @@
-import FruitDetailsScreen from "@/app/fruit-details[fruitName]";
+import FruitDetailsScreen from "@/app/FruitDetailsScreen";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ExploreStackParamList } from "@/types/navigation";
 import { createStackNavigator } from "@react-navigation/stack";
