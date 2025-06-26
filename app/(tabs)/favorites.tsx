@@ -1,16 +1,15 @@
 import { FruitCard } from "@/components/FruitCard";
-import { FruitCardSkeleton } from "@/components/FruitCardSkeleton";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useFruitStore } from "@/stores/fruitStore";
+import { useFavoritesStore } from "@/stores/favoritesStore";
 import { Fruit } from "@/types/fruit";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
-  ActivityIndicator,
   Button,
+  Chip,
   FAB,
   IconButton,
   Menu,
@@ -21,74 +20,65 @@ import {
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ExploreScreen() {
+export default function FavoritesScreen() {
   const { theme } = useTheme();
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [isScreenFocused, setIsScreenFocused] = React.useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showMenu, setShowMenu] = useState(false);
-  const [sortBy, setSortBy] = useState<"name" | "calories" | "protein">("name");
+  const [sortBy, setSortBy] = useState<"name" | "dateAdded" | "calories">(
+    "dateAdded"
+  );
 
   const {
-    fruits,
+    favorites,
     isLoading,
-    error,
-    fetchAllFruits,
-    fetchNutritionStats,
-    clearError,
-    nutritionStats,
-  } = useFruitStore();
+    loadFavorites,
+    removeFavorite,
+    clearAllFavorites,
+    getFavoriteStats,
+  } = useFavoritesStore();
 
   useFocusEffect(
     React.useCallback(() => {
-      setIsScreenFocused(true);
-      loadFruits();
-      return () => {
-        setIsScreenFocused(false);
-      };
+      loadFavorites();
     }, [])
   );
 
-  const loadFruits = async () => {
-    try {
-      await fetchAllFruits();
-      await fetchNutritionStats();
-    } catch (err) {
-      console.error("Error loading fruits:", err);
-    }
-  };
-
   const handleRefresh = async () => {
-    await loadFruits();
-    showMessage("Frutas actualizadas 🍎");
+    await loadFavorites();
+    showMessage("Favoritos actualizados 💖");
   };
 
   const handleFruitPress = (fruit: Fruit) => {
-    showMessage(`Navegando a: ${fruit.name} 🍎`);
-    console.log("Fruit selected:", fruit);
-
     router.push({
       pathname: "/fruit-details/[fruitName]",
       params: { fruitName: encodeURIComponent(fruit.name) },
     });
   };
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      router.push({
-        pathname: "/search",
-        params: { query: searchQuery },
-      });
-    } else {
-      router.push({
-        pathname: "/search",
-      });
-    }
+  const handleRemoveFavorite = async (fruit: Fruit) => {
+    await removeFavorite(fruit.id.toString());
+    showMessage(`${fruit.name} eliminado de favoritos`);
   };
 
-  const handleAdvancedSearch = () => {
-    router.push("/search");
+  const handleClearAll = async () => {
+    await clearAllFavorites();
+    showMessage("Todos los favoritos eliminados");
+  };
+
+  const handleSort = (newSortBy: "name" | "dateAdded" | "calories") => {
+    setSortBy(newSortBy);
+    setShowMenu(false);
+    showMessage(
+      `Ordenado por ${
+        newSortBy === "name"
+          ? "nombre"
+          : newSortBy === "dateAdded"
+          ? "fecha"
+          : "calorías"
+      }`
+    );
   };
 
   const showMessage = (message: string) => {
@@ -96,82 +86,64 @@ export default function ExploreScreen() {
     setShowSnackbar(true);
   };
 
-  const handleRetry = () => {
-    clearError();
-    loadFruits();
-  };
-
-  const handleSort = (newSortBy: "name" | "calories" | "protein") => {
-    setSortBy(newSortBy);
-    setShowMenu(false);
-    showMessage(
-      `Ordenado por ${
-        newSortBy === "name"
-          ? "nombre"
-          : newSortBy === "calories"
-          ? "calorías"
-          : "proteína"
-      }`
-    );
-  };
-
-  // Función para ordenar frutas
-  const getSortedFruits = () => {
-    const sortedFruits = [...fruits];
+  const getSortedFavorites = () => {
+    const sortedFavorites = [...favorites];
     switch (sortBy) {
       case "name":
-        return sortedFruits.sort((a, b) => a.name.localeCompare(b.name));
+        return sortedFavorites.sort((a, b) => a.name.localeCompare(b.name));
       case "calories":
-        return sortedFruits.sort(
+        return sortedFavorites.sort(
           (a, b) => (b.nutritions.calories || 0) - (a.nutritions.calories || 0)
         );
-      case "protein":
-        return sortedFruits.sort(
-          (a, b) => (b.nutritions.protein || 0) - (a.nutritions.protein || 0)
-        );
+      case "dateAdded":
       default:
-        return sortedFruits;
+        return sortedFavorites.sort(
+          (a, b) =>
+            new Date(b.dateAdded || 0).getTime() -
+            new Date(a.dateAdded || 0).getTime()
+        );
     }
   };
 
-  // Función para filtrar frutas por búsqueda local
-  const getFilteredFruits = () => {
-    const sortedFruits = getSortedFruits();
-    if (!searchQuery.trim()) return sortedFruits;
+  const getFilteredFavorites = () => {
+    const sortedFavorites = getSortedFavorites();
+    if (!searchQuery.trim()) return sortedFavorites;
 
-    return sortedFruits.filter((fruit) =>
+    return sortedFavorites.filter((fruit) =>
       fruit.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   };
+
+  const stats = getFavoriteStats();
 
   const renderHeader = () => (
     <Surface
       style={[
         styles.header,
-        { backgroundColor: theme.colors.primaryContainer },
+        { backgroundColor: theme.colors.tertiaryContainer },
       ]}
       elevation={3}
     >
       <IconSymbol
         size={60}
-        color={theme.colors.onPrimaryContainer}
-        name="apple.logo"
+        color={theme.colors.onTertiaryContainer}
+        name="heart.fill"
         style={styles.headerIcon}
       />
       <Text
         variant="headlineLarge"
-        style={[styles.title, { color: theme.colors.onPrimaryContainer }]}
+        style={[styles.title, { color: theme.colors.onTertiaryContainer }]}
       >
-        Fruity Facts
+        Mis Favoritos
       </Text>
       <Text
         variant="bodyMedium"
-        style={[styles.subtitle, { color: theme.colors.onPrimaryContainer }]}
+        style={[styles.subtitle, { color: theme.colors.onTertiaryContainer }]}
       >
-        Descubre el mundo de las frutas y sus beneficios nutricionales
+        Tus frutas favoritas guardadas para acceso rápido
       </Text>
 
-      {nutritionStats && (
+      {stats && (
         <Surface
           style={[
             styles.statsContainer,
@@ -184,10 +156,10 @@ export default function ExploreScreen() {
               variant="titleMedium"
               style={{ color: theme.colors.primary, fontWeight: "bold" }}
             >
-              {nutritionStats.totalFruits}
+              {stats.totalFavorites}
             </Text>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
-              Frutas
+              Favoritos
             </Text>
           </View>
           <View style={styles.statItem}>
@@ -195,7 +167,7 @@ export default function ExploreScreen() {
               variant="titleMedium"
               style={{ color: theme.colors.secondary, fontWeight: "bold" }}
             >
-              {nutritionStats.averageCalories}
+              {stats.averageCalories}
             </Text>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
               Cal. promedio
@@ -206,10 +178,10 @@ export default function ExploreScreen() {
               variant="titleMedium"
               style={{ color: theme.colors.tertiary, fontWeight: "bold" }}
             >
-              {nutritionStats.highestProtein.name}
+              {stats.mostRecent?.name || "N/A"}
             </Text>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
-              Más proteína
+              Más reciente
             </Text>
           </View>
         </Surface>
@@ -224,10 +196,9 @@ export default function ExploreScreen() {
     >
       <View style={styles.searchContainer}>
         <Searchbar
-          placeholder="Buscar frutas localmente..."
+          placeholder="Buscar en favoritos..."
           onChangeText={setSearchQuery}
           value={searchQuery}
-          onSubmitEditing={handleSearch}
           style={[
             styles.searchbar,
             { backgroundColor: theme.colors.surfaceVariant },
@@ -235,14 +206,6 @@ export default function ExploreScreen() {
           inputStyle={{ color: theme.colors.onSurface }}
           iconColor={theme.colors.onSurfaceVariant}
           placeholderTextColor={theme.colors.onSurfaceVariant}
-          right={() => (
-            <IconButton
-              icon="tune"
-              size={20}
-              onPress={handleAdvancedSearch}
-              iconColor={theme.colors.primary}
-            />
-          )}
         />
       </View>
 
@@ -263,6 +226,12 @@ export default function ExploreScreen() {
           }
         >
           <Menu.Item
+            onPress={() => handleSort("dateAdded")}
+            title="Por fecha"
+            leadingIcon="calendar"
+            trailingIcon={sortBy === "dateAdded" ? "check" : undefined}
+          />
+          <Menu.Item
             onPress={() => handleSort("name")}
             title="Por nombre"
             leadingIcon="alphabetical"
@@ -274,144 +243,99 @@ export default function ExploreScreen() {
             leadingIcon="fire"
             trailingIcon={sortBy === "calories" ? "check" : undefined}
           />
-          <Menu.Item
-            onPress={() => handleSort("protein")}
-            title="Por proteína"
-            leadingIcon="dumbbell"
-            trailingIcon={sortBy === "protein" ? "check" : undefined}
-          />
         </Menu>
 
-        <Button
-          mode="text"
-          onPress={handleAdvancedSearch}
-          icon="magnify-plus"
-          compact
-          style={styles.advancedButton}
-        >
-          Búsqueda avanzada
-        </Button>
+        {favorites.length > 0 && (
+          <Button
+            mode="text"
+            onPress={handleClearAll}
+            icon="delete"
+            compact
+            textColor={theme.colors.error}
+            style={styles.clearButton}
+          >
+            Limpiar todo
+          </Button>
+        )}
       </View>
     </Surface>
   );
 
-  const renderError = () => (
-    <Surface
-      style={[
-        styles.errorContainer,
-        { backgroundColor: theme.colors.errorContainer },
-      ]}
-      elevation={2}
-    >
-      <IconSymbol
-        name="exclamationmark.triangle"
-        size={48}
-        color={theme.colors.onErrorContainer}
-        style={styles.errorIcon}
-      />
-      <Text
-        variant="titleMedium"
-        style={[styles.errorTitle, { color: theme.colors.onErrorContainer }]}
-      >
-        ¡Ups! Algo salió mal
-      </Text>
-      <Text
-        variant="bodyMedium"
-        style={[styles.errorMessage, { color: theme.colors.onErrorContainer }]}
-      >
-        {error}
-      </Text>
-      <Button
-        mode="contained"
-        onPress={handleRetry}
-        style={[styles.retryButton, { backgroundColor: theme.colors.error }]}
-        labelStyle={{ color: theme.colors.onError }}
-      >
-        Reintentar
-      </Button>
-    </Surface>
-  );
-
   const renderEmptyState = () => (
-    <Surface
-      style={[
-        styles.emptyContainer,
-        { backgroundColor: theme.colors.surfaceVariant },
-      ]}
-      elevation={1}
-    >
-      <IconSymbol
-        name="questionmark.folder"
-        size={64}
-        color={theme.colors.onSurfaceVariant}
-        style={styles.emptyIcon}
-      />
-      <Text
-        variant="titleLarge"
-        style={[styles.emptyTitle, { color: theme.colors.onSurfaceVariant }]}
+    <View style={styles.emptyContainer}>
+      <Surface
+        style={[
+          styles.emptyCard,
+          { backgroundColor: theme.colors.surfaceVariant },
+        ]}
+        elevation={1}
       >
-        {searchQuery ? "No se encontraron frutas" : "No hay frutas disponibles"}
-      </Text>
-      <Text
-        variant="bodyMedium"
-        style={[styles.emptyMessage, { color: theme.colors.onSurfaceVariant }]}
-      >
-        {searchQuery
-          ? `No hay resultados para "${searchQuery}". Intenta con otro término.`
-          : "Intenta recargar la lista para ver las frutas disponibles"}
-      </Text>
-      {searchQuery ? (
-        <Button
-          mode="outlined"
-          onPress={() => setSearchQuery("")}
-          style={styles.refreshButton}
+        <IconSymbol
+          name="heart.slash"
+          size={80}
+          color={theme.colors.onSurfaceVariant}
+          style={styles.emptyIcon}
+        />
+        <Text
+          variant="headlineSmall"
+          style={[styles.emptyTitle, { color: theme.colors.onSurfaceVariant }]}
         >
-          Limpiar búsqueda
-        </Button>
-      ) : (
-        <Button
-          mode="outlined"
-          onPress={handleRefresh}
-          style={styles.refreshButton}
+          {searchQuery ? "Sin resultados" : "Sin favoritos aún"}
+        </Text>
+        <Text
+          variant="bodyMedium"
+          style={[
+            styles.emptyMessage,
+            { color: theme.colors.onSurfaceVariant },
+          ]}
         >
-          Recargar
-        </Button>
-      )}
-    </Surface>
-  );
+          {searchQuery
+            ? `No se encontraron favoritos para "${searchQuery}"`
+            : "Explora frutas y marca tus favoritas tocando el corazón"}
+        </Text>
 
-  const renderSkeletons = () => (
-    <View>
-      {Array.from({ length: 6 }, (_, index) => (
-        <FruitCardSkeleton key={`skeleton-${index}`} index={index} />
-      ))}
+        <View style={styles.emptyActions}>
+          {searchQuery ? (
+            <Button
+              mode="outlined"
+              onPress={() => setSearchQuery("")}
+              icon="close"
+            >
+              Limpiar búsqueda
+            </Button>
+          ) : (
+            <Button
+              mode="contained"
+              onPress={() => router.push("/(tabs)/explore")}
+              icon="compass"
+            >
+              Explorar frutas
+            </Button>
+          )}
+        </View>
+      </Surface>
     </View>
   );
 
   const renderContent = () => {
-    if (error) {
-      return renderError();
-    }
+    const filteredFavorites = getFilteredFavorites();
 
-    if (isLoading) {
-      return renderSkeletons();
-    }
-
-    const filteredFruits = getFilteredFruits();
-
-    if (filteredFruits.length === 0) {
+    if (filteredFavorites.length === 0) {
       return renderEmptyState();
     }
 
     return (
-      <View style={styles.fruitsContainer}>
-        <View style={styles.fruitsHeader}>
+      <View style={styles.favoritesContainer}>
+        <View style={styles.favoritesHeader}>
           <Text
             variant="titleMedium"
-            style={[styles.fruitsTitle, { color: theme.colors.onBackground }]}
+            style={[
+              styles.favoritesTitle,
+              { color: theme.colors.onBackground },
+            ]}
           >
-            🍎 {searchQuery ? "Resultados" : "Todas las frutas"} (
-            {filteredFruits.length})
+            💖 {searchQuery ? "Resultados" : "Tus favoritos"} (
+            {filteredFavorites.length})
           </Text>
           {searchQuery && (
             <Text
@@ -425,29 +349,33 @@ export default function ExploreScreen() {
             </Text>
           )}
         </View>
-        {filteredFruits.map((fruit, index) => (
-          <FruitCard
-            key={fruit.id}
-            fruit={fruit}
-            onPress={handleFruitPress}
-            index={index}
-          />
+
+        {filteredFavorites.map((fruit, index) => (
+          <View key={fruit.id} style={styles.favoriteItem}>
+            <FruitCard fruit={fruit} onPress={handleFruitPress} index={index} />
+            <View style={styles.favoriteActions}>
+              <Chip
+                icon="calendar"
+                compact
+                style={styles.dateChip}
+                textStyle={{ fontSize: 11 }}
+              >
+                {fruit.dateAdded
+                  ? new Date(fruit.dateAdded).toLocaleDateString()
+                  : "N/A"}
+              </Chip>
+              <IconButton
+                icon="heart-remove"
+                size={20}
+                iconColor={theme.colors.error}
+                onPress={() => handleRemoveFavorite(fruit)}
+              />
+            </View>
+          </View>
         ))}
       </View>
     );
   };
-
-  if (!isScreenFocused) {
-    return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: theme.colors.background }]}
-      >
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView
@@ -465,26 +393,24 @@ export default function ExploreScreen() {
           />
         }
         contentContainerStyle={styles.scrollContent}
-        stickyHeaderIndices={[1]} // Hacer sticky la sección de búsqueda
+        stickyHeaderIndices={[1]}
       >
         {renderHeader()}
         {renderSearchSection()}
         {renderContent()}
 
-        {/* Espaciado inferior para el FAB */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* FAB */}
-      <FAB
-        icon="refresh"
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={handleRefresh}
-        loading={isLoading}
-        disabled={isLoading}
-      />
+      {favorites.length > 0 && (
+        <FAB
+          icon="heart-plus"
+          style={[styles.fab, { backgroundColor: theme.colors.tertiary }]}
+          onPress={() => router.push("/(tabs)/explore")}
+          label="Agregar más"
+        />
+      )}
 
-      {/* Snackbar */}
       <Snackbar
         visible={showSnackbar}
         onDismiss={() => setShowSnackbar(false)}
@@ -506,11 +432,6 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
   scrollView: {
     flex: 1,
@@ -549,8 +470,6 @@ const styles = StyleSheet.create({
   statItem: {
     alignItems: "center",
   },
-
-  // Search section styles
   searchSection: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -571,18 +490,16 @@ const styles = StyleSheet.create({
   sortButton: {
     borderRadius: 20,
   },
-  advancedButton: {
+  clearButton: {
     borderRadius: 20,
   },
-
-  // Fruits section styles
-  fruitsContainer: {
+  favoritesContainer: {
     paddingHorizontal: 16,
   },
-  fruitsHeader: {
+  favoritesHeader: {
     marginBottom: 8,
   },
-  fruitsTitle: {
+  favoritesTitle: {
     fontWeight: "bold",
     fontSize: 18,
     marginBottom: 4,
@@ -590,34 +507,24 @@ const styles = StyleSheet.create({
   searchInfo: {
     fontStyle: "italic",
   },
-
-  // Error styles
-  errorContainer: {
-    margin: 16,
-    padding: 24,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  errorIcon: {
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontWeight: "bold",
+  favoriteItem: {
     marginBottom: 8,
-    textAlign: "center",
   },
-  errorMessage: {
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  retryButton: {
-    borderRadius: 24,
+  favoriteActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
+    paddingTop: 8,
   },
-
-  // Empty state styles
+  dateChip: {
+    height: 28,
+  },
   emptyContainer: {
-    margin: 16,
+    flex: 1,
+    padding: 16,
+  },
+  emptyCard: {
     padding: 32,
     borderRadius: 16,
     alignItems: "center",
@@ -632,14 +539,13 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 24,
     lineHeight: 20,
   },
-  refreshButton: {
-    borderRadius: 24,
+  emptyActions: {
+    flexDirection: "row",
+    gap: 12,
   },
-
-  // FAB and spacing
   bottomSpacing: {
     height: 80,
   },

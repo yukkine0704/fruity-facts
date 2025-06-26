@@ -1,15 +1,16 @@
 import { useTheme } from "@/contexts/ThemeContext";
-import { createStackNavigator } from "@react-navigation/stack";
 import React from "react";
 import { BottomNavigation } from "react-native-paper";
 
 const HomeScreen = React.lazy(() => import("./index"));
-const ExploreStack = React.lazy(() => import("./explore/_layout"));
+const ExploreScreen = React.lazy(() => import("./explore"));
+const FavoritesScreen = React.lazy(() => import("./favorites"));
+const ProfileScreen = React.lazy(() => import("./profile"));
 
 const MemoizedHomeScreen = React.memo(HomeScreen);
-const MemoizedExploreStack = React.memo(ExploreStack);
-
-const Stack = createStackNavigator();
+const MemoizedExploreScreen = React.memo(ExploreScreen);
+const MemoizedFavoritesScreen = React.memo(FavoritesScreen);
+const MemoizedProfileScreen = React.memo(ProfileScreen);
 
 export default function TabLayout() {
   const { theme } = useTheme();
@@ -28,6 +29,18 @@ export default function TabLayout() {
       focusedIcon: "compass",
       unfocusedIcon: "compass-outline",
     },
+    {
+      key: "favorites",
+      title: "Favoritos",
+      focusedIcon: "heart",
+      unfocusedIcon: "heart-outline",
+    },
+    {
+      key: "profile",
+      title: "Perfil",
+      focusedIcon: "account",
+      unfocusedIcon: "account-outline",
+    },
   ];
 
   const renderScene = React.useCallback(({ route }: { route: any }) => {
@@ -35,7 +48,11 @@ export default function TabLayout() {
       case "home":
         return <MemoizedHomeScreen />;
       case "explore":
-        return <MemoizedExploreStack />;
+        return <MemoizedExploreScreen />;
+      case "favorites":
+        return <MemoizedFavoritesScreen />;
+      case "profile":
+        return <MemoizedProfileScreen />;
       default:
         return null;
     }
@@ -54,6 +71,7 @@ export default function TabLayout() {
         borderTopWidth: 0.5,
       }}
       sceneAnimationType="shifting"
+      shifting={true}
     />
   );
 }

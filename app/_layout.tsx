@@ -1,56 +1,44 @@
-import { useTheme } from "@/contexts/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { BottomNavigation } from "react-native-paper";
+import { PaperProvider } from "react-native-paper";
 
-const HomeScreen = React.lazy(() => import("./(tabs)/index"));
-const ExploreStack = React.lazy(() => import("./(tabs)/explore/_layout"));
-
-const MemoizedHomeScreen = React.memo(HomeScreen);
-const MemoizedExploreStack = React.memo(ExploreStack);
-
-export default function TabLayout() {
-  const { theme } = useTheme();
-  const [index, setIndex] = React.useState(0);
-
-  const routes = [
-    {
-      key: "home",
-      title: "Inicio",
-      focusedIcon: "home",
-      unfocusedIcon: "home-outline",
-    },
-    {
-      key: "explore",
-      title: "Explorar",
-      focusedIcon: "compass",
-      unfocusedIcon: "compass-outline",
-    },
-  ];
-
-  const renderScene = React.useCallback(({ route }: { route: any }) => {
-    switch (route.key) {
-      case "home":
-        return <MemoizedHomeScreen />;
-      case "explore":
-        return <MemoizedExploreStack />;
-      default:
-        return null;
-    }
-  }, []);
-
+export default function RootLayout() {
   return (
-    <BottomNavigation
-      navigationState={{ index, routes }}
-      onIndexChange={setIndex}
-      renderScene={renderScene}
-      activeColor={theme.colors.primary}
-      inactiveColor={theme.colors.onSurfaceVariant}
-      barStyle={{
-        backgroundColor: theme.colors.surface,
-        borderTopColor: theme.colors.outline,
-        borderTopWidth: 0.5,
-      }}
-      sceneAnimationType="shifting"
-    />
+    <ThemeProvider>
+      <PaperProvider>
+        <StatusBar style="auto" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="fruit-details/[fruitName]"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
+          <Stack.Screen
+            name="search/index"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
+          <Stack.Screen
+            name="compare/index"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
+        </Stack>
+      </PaperProvider>
+    </ThemeProvider>
   );
 }

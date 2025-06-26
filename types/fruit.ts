@@ -13,6 +13,7 @@ export interface Fruit {
   order: string;
   genus: string;
   nutritions: Nutritions;
+  dateAdded?: Date;
 }
 
 export type SingleFruitResponse = Fruit;
