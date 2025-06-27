@@ -98,14 +98,7 @@ export default function TabLayout() {
 
   const CustomTabBar = () => {
     return (
-      <Animated.View
-        style={[
-          styles.dockContainer,
-          dockAnimatedStyle,
-          // Eliminamos estilos de transparencia aquí si estaban directamente en dockContainer
-        ]}
-      >
-        {/* Usamos un View simple con el fondo sólido */}
+      <Animated.View style={[styles.dockContainer, dockAnimatedStyle]}>
         <View style={styles.solidDock}>
           {routes.map((route, tabIndex) => {
             const isActive = index === tabIndex;
@@ -184,7 +177,7 @@ export default function TabLayout() {
         content: {
           flex: 1,
           backgroundColor: theme.colors.background,
-          paddingBottom: 100,
+          paddingBottom: 0,
         },
         dockContainer: {
           position: "absolute",
@@ -192,27 +185,26 @@ export default function TabLayout() {
           left: 16,
           right: 16,
           alignItems: "center",
-          // Sombra de "glow" se aplica a dockContainer
-          shadowColor: theme.colors.primary, // Color del glow, puedes cambiarlo
+          shadowColor: theme.colors.primary,
           shadowOffset: {
             width: 0,
             height: 8,
           },
-          shadowOpacity: 0.4, // Opacidad del glow
-          shadowRadius: 15, // Difuminado del glow
-          elevation: 10, // Elevación para Android
+          shadowOpacity: 0.4,
+          shadowRadius: 15,
+          elevation: 10,
+          zIndex: 1000,
         },
         solidDock: {
-          // <-- Nuevo estilo para el fondo sólido
           flexDirection: "row",
           paddingHorizontal: 8,
           paddingVertical: 12,
           borderRadius: 28,
           borderWidth: 1,
-          borderColor: theme.colors.outline + "15", // Borde sutil
-          backgroundColor: theme.colors.surface, // Fondo sólido
-          overflow: "hidden", // Asegura que el borderRadius funcione
-          flex: 1, // Asegura que ocupe todo el espacio en dockContainer
+          borderColor: theme.colors.outline + "15",
+          backgroundColor: theme.colors.surface,
+          overflow: "hidden",
+          flex: 1,
         },
         tabItem: {
           flex: 1,
@@ -224,6 +216,17 @@ export default function TabLayout() {
           borderRadius: 20,
           padding: 4,
         },
+        hiddenTabBar: {
+          height: 0,
+          overflow: "hidden",
+          opacity: 0,
+          backgroundColor: "transparent",
+          position: "absolute",
+          bottom: -1000,
+        },
+        bottomNavigation: {
+          backgroundColor: "transparent",
+        },
       }),
     [theme, insets]
   );
@@ -232,16 +235,16 @@ export default function TabLayout() {
     <View style={styles.container}>
       <StatusBar
         barStyle={theme.dark ? "light-content" : "dark-content"}
-        backgroundColor={theme.colors.background} // StatusBar con el color de fondo de tu tema
-        translucent={false} // No translúcida para que no se superponga el contenido
+        backgroundColor="transparent"
+        translucent={true}
       />
       <View style={styles.content}>
         <BottomNavigation
           navigationState={{ index, routes }}
           onIndexChange={setIndex}
           renderScene={renderScene}
-          // Asegúrate de que el BottomNavigation no tenga un estilo de barra que lo opaque si no lo deseas
-          barStyle={{ display: "none" }}
+          barStyle={styles.hiddenTabBar}
+          style={styles.bottomNavigation}
         />
       </View>
       <CustomTabBar />

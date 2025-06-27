@@ -8,7 +8,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <PaperProvider>
-        <StatusBar style="auto" />
+        <StatusBar
+          style="auto"
+          backgroundColor="transparent"
+          translucent={true}
+        />
         <Stack
           screenOptions={{
             headerShown: false,

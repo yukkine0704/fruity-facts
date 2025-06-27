@@ -14,9 +14,16 @@
       "backgroundColor": "#fefbff"
     },
     "assetBundlePatterns": ["**/*"],
+    "statusBar": {
+      "style": "auto",
+      "backgroundColor": "transparent",
+      "translucent": true
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yukkine0704.fruityfacts"
+      "bundleIdentifier": "com.yukkine0704.fruityfacts",
+      "statusBarStyle": "auto",
+      "statusBarBackgroundColor": "transparent"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +31,12 @@
         "backgroundColor": "#fefbff"
       },
       "package": "com.yukkine0704.fruityfacts",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "statusBar": {
+        "backgroundColor": "transparent",
+        "translucent": true,
+        "style": "auto"
+      }
     },
     "web": {
       "bundler": "metro",
