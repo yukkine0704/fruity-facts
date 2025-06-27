@@ -474,7 +474,6 @@ export default function FavoritesScreen() {
           />
         }
         contentContainerStyle={styles.scrollContent}
-        // stickyHeaderIndices={[1]} // Desactivar stickyHeader para permitir el efecto de superposición
       >
         {renderHeader()}
         {renderSearchSection()}{" "}
@@ -485,12 +484,11 @@ export default function FavoritesScreen() {
 
       {favorites.length > 0 && (
         <FAB
-          icon="plus" // Un ícono más estándar para FAB de añadir
+          icon="plus"
           style={[styles.fab, { backgroundColor: theme.colors.tertiary }]}
           onPress={() => router.push("/(tabs)/explore")}
           label="Agregar más"
-          // Usar el nuevo modo 'extended' para Material 3 FAB
-          variant="secondary" // secondary para FAB de adición
+          variant="secondary"
         />
       )}
 

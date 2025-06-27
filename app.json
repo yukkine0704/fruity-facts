@@ -11,11 +11,9 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#fefbff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yukkine0704.fruityfacts"
@@ -23,7 +21,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#fefbff"
       },
       "package": "com.yukkine0704.fruityfacts",
       "edgeToEdgeEnabled": true
@@ -41,7 +39,11 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#fefbff",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#1c1b1f"
+          }
         }
       ]
     ],
