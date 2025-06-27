@@ -1,6 +1,6 @@
 import { useTheme } from "@/contexts/ThemeContext";
 import React, { useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native"; // Importamos View para el shimmer
 import { Card, Surface } from "react-native-paper";
 import Animated, {
   Easing,
@@ -27,8 +27,8 @@ export const FruitCardSkeleton: React.FC<FruitCardSkeletonProps> = ({
   const opacityAnimation = useSharedValue(0);
 
   useEffect(() => {
-    // Animación de entrada
-    const delay = index * 100;
+    // Animación de entrada escalonada (similar a FruitCard)
+    const delay = index * 120; // Coincidir con el delay de FruitCard
 
     scaleAnimation.value = withDelay(
       delay,
@@ -40,20 +40,68 @@ export const FruitCardSkeleton: React.FC<FruitCardSkeletonProps> = ({
 
     opacityAnimation.value = withDelay(delay, withTiming(1, { duration: 600 }));
 
-    // Animación de shimmer
+    // Animación de shimmer (brillo que se mueve)
     shimmerAnimation.value = withDelay(
-      delay + 200,
+      delay + 200, // Inicia un poco después de la aparición de la tarjeta
       withRepeat(
         withTiming(1, {
-          duration: 1500,
+          duration: 1800, // Ligeramente más lento para un efecto más suave
           easing: Easing.inOut(Easing.ease),
         }),
-
-        -1,
-        true
+        -1, // Repetir infinitamente
+        true // Animar en reversa
       )
     );
   }, [index]);
+
+  // Componente auxiliar para los bloques de esqueleto
+  const SkeletonBox: React.FC<{
+    width: number | string;
+    height: number;
+    style?: any;
+    borderRadius?: number; // Propiedad para un borderRadius personalizado
+  }> = ({ width, height, style, borderRadius = 8 }) => {
+    const shimmerStyle = useAnimatedStyle(() => {
+      // Ajustar el rango de traducción para que el brillo cubra el ancho del esqueleto
+      const translateX = interpolate(
+        shimmerAnimation.value,
+        [0, 1],
+        typeof width === "number" ? [-width, width] : [-100, 100]
+      );
+
+      return {
+        transform: [{ translateX }],
+      };
+    });
+
+    return (
+      <View
+        style={[
+          {
+            width,
+            height,
+            backgroundColor: theme.colors.surfaceVariant, // Color de fondo del esqueleto (un tono más claro)
+            borderRadius: borderRadius,
+            overflow: "hidden", // Necesario para que el shimmer se recorte dentro del SkeletonBox
+          },
+          style,
+        ]}
+      >
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject, // Cubre todo el área del View padre
+            {
+              backgroundColor: theme.colors.surfaceContainerHigh, // Color del brillo (más brillante)
+              // Ajustar el ancho del brillo para que sea visible
+              width: "50%", // O un valor fijo como 100
+              opacity: 0.5, // Opacidad fija para el brillo
+            },
+            shimmerStyle,
+          ]}
+        />
+      </View>
+    );
+  };
 
   const cardAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -62,83 +110,31 @@ export const FruitCardSkeleton: React.FC<FruitCardSkeletonProps> = ({
     };
   });
 
-  const SkeletonBox: React.FC<{
-    width: number | string;
-    height: number;
-    style?: any;
-
-    delay?: number;
-  }> = ({ width, height, style, delay = 0 }) => {
-    const shimmerStyle = useAnimatedStyle(() => {
-      const shimmerOpacity = interpolate(
-        shimmerAnimation.value,
-        [0, 0.5, 1],
-        [0.3, 0.7, 0.3]
-      );
-
-      const shimmerTranslateX = interpolate(
-        shimmerAnimation.value,
-        [0, 1],
-        [-100, 100]
-      );
-
-      return {
-        opacity: shimmerOpacity,
-        transform: [{ translateX: shimmerTranslateX }],
-      };
-    });
-
-    return (
-      <Animated.View
-        style={[
-          {
-            width,
-            height,
-            backgroundColor: theme.colors.outline,
-            borderRadius: 8,
-            overflow: "hidden",
-          },
-          style,
-        ]}
-      >
-        <Animated.View
-          style={[
-            {
-              width: "100%",
-              height: "100%",
-              backgroundColor: theme.colors.surface,
-            },
-            shimmerStyle,
-          ]}
-        />
-      </Animated.View>
-    );
-  };
-
   return (
     <AnimatedCard
       style={[
         styles.card,
-        { backgroundColor: theme.colors.surface },
+        { backgroundColor: theme.colors.surfaceContainerLow }, // Coincide con el color de fondo de FruitCard
         cardAnimatedStyle,
       ]}
-      elevation={2}
+      elevation={theme.dark ? 1 : 2} // Coincide con la elevación de FruitCard
     >
       <Card.Content style={styles.content}>
         {/* Header Skeleton */}
         <Surface
           style={[
             styles.header,
-            { backgroundColor: theme.colors.surfaceVariant },
+            { backgroundColor: theme.colors.primaryContainer }, // Coincide con el color del header de FruitCard
           ]}
-          elevation={1}
+          elevation={theme.dark ? 0 : 1} // Coincide con la elevación del header de FruitCard
         >
-          <SkeletonBox width={40} height={40} style={{ borderRadius: 20 }} />
+          <SkeletonBox width={40} height={40} borderRadius={20} />{" "}
+          {/* Círculo para el icono */}
           <SkeletonBox
             width="70%"
             height={24}
+            borderRadius={12} // Redondeado como el texto
             style={{ marginLeft: 12 }}
-            delay={100}
           />
         </Surface>
 
@@ -146,73 +142,60 @@ export const FruitCardSkeleton: React.FC<FruitCardSkeletonProps> = ({
         <Surface
           style={[
             styles.taxonomySection,
-            { backgroundColor: theme.colors.surfaceVariant },
+            { backgroundColor: theme.colors.surfaceContainerHigh }, // Coincide con el color de la sección de taxonomía
           ]}
-          elevation={0}
+          elevation={theme.dark ? 0 : 1}
         >
           <SkeletonBox
             width="40%"
-            height={12}
-            style={{ marginBottom: 8 }}
-            delay={200}
+            height={16} // Más alto para el título de la sección
+            borderRadius={8}
+            style={{ marginBottom: 12 }} // Más espacio debajo del título
           />
           <SkeletonBox
             width="80%"
             height={16}
+            borderRadius={8}
             style={{ marginBottom: 4 }}
-            delay={300}
           />
-          <SkeletonBox width="75%" height={16} delay={400} />
+          <SkeletonBox width="75%" height={16} borderRadius={8} />
         </Surface>
 
         {/* Nutrition Section Skeleton */}
         <Surface
           style={[
             styles.nutritionSection,
-            { backgroundColor: theme.colors.surfaceVariant },
+            { backgroundColor: theme.colors.secondaryContainer }, // Coincide con el color de la sección de nutrición
           ]}
-          elevation={1}
+          elevation={theme.dark ? 0 : 1}
         >
           <SkeletonBox
             width="60%"
-            height={12}
-            style={{ marginBottom: 8 }}
-            delay={500}
+            height={16} // Más alto para el título de la sección
+            borderRadius={8}
+            style={{ marginBottom: 12 }} // Más espacio debajo del título
           />
-          <Surface style={styles.nutritionGrid} elevation={0}>
+          <View style={styles.nutritionGrid}>
+            {" "}
+            {/* Usamos View para los children */}
+            {/* Los ítems de nutrición ahora tienen un ancho más flexible */}
             <SkeletonBox
-              width={80}
+              width={"48%"} // Aproximadamente la mitad, menos el gap
               height={28}
-              style={{ borderRadius: 14 }}
-              delay={600}
+              borderRadius={20} // Coincide con el estilo de "pill"
             />
-            <SkeletonBox
-              width={90}
-              height={28}
-              style={{ borderRadius: 14 }}
-              delay={700}
-            />
-            <SkeletonBox
-              width={85}
-              height={28}
-              style={{ borderRadius: 14 }}
-              delay={800}
-            />
-            <SkeletonBox
-              width={75}
-              height={28}
-              style={{ borderRadius: 14 }}
-              delay={900}
-            />
-          </Surface>
+            <SkeletonBox width={"48%"} height={28} borderRadius={20} />
+            <SkeletonBox width={"48%"} height={28} borderRadius={20} />
+            <SkeletonBox width={"48%"} height={28} borderRadius={20} />
+          </View>
         </Surface>
 
         {/* ID Chip Skeleton */}
         <SkeletonBox
-          width={60}
+          width={70} // Ajustamos el ancho para que parezca un chip pequeño
           height={32}
-          style={{ borderRadius: 16 }}
-          delay={1000}
+          borderRadius={16} // Coincide con el estilo del chip
+          style={styles.idChip} // Aplicamos el estilo para posicionamiento
         />
       </Card.Content>
     </AnimatedCard>
@@ -223,32 +206,45 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: 16,
     marginVertical: 8,
-    borderRadius: 16,
+    borderRadius: 20, // Coincide con FruitCard
+    overflow: "hidden",
   },
   content: {
-    padding: 16,
+    padding: 0, // Coincide con FruitCard
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
+    paddingVertical: 16, // Coincide con FruitCard
+    paddingHorizontal: 20, // Coincide con FruitCard
+    borderTopLeftRadius: 20, // Coincide con FruitCard
+    borderTopRightRadius: 20,
+    marginBottom: 16, // Coincide con FruitCard
   },
   taxonomySection: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16, // Coincide con FruitCard
+    marginHorizontal: 16, // Coincide con FruitCard
+    marginBottom: 16,
   },
   nutritionSection: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16, // Coincide con FruitCard
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   nutritionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    backgroundColor: "transparent",
+    gap: 8, // Coincide con FruitCard
+    justifyContent: "space-between", // Coincide con FruitCard
+    backgroundColor: "transparent", // Asegurarse que no tenga un fondo sólido
+  },
+  idChip: {
+    alignSelf: "flex-end", // Coincide con FruitCard
+    marginHorizontal: 16,
+    marginBottom: 16, // Coincide con FruitCard
   },
 });

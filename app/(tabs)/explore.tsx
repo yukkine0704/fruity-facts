@@ -4,6 +4,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useFruitStore } from "@/stores/fruitStore";
 import { Fruit } from "@/types/fruit";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -13,6 +14,7 @@ import {
   Button,
   FAB,
   IconButton,
+  List,
   Menu,
   Searchbar,
   Snackbar,
@@ -61,11 +63,11 @@ export default function ExploreScreen() {
 
   const handleRefresh = async () => {
     await loadFruits();
-    showMessage("Frutas actualizadas 🍎");
+    showMessage("Lista de frutas actualizada."); // Mensaje más genérico
   };
 
   const handleFruitPress = (fruit: Fruit) => {
-    showMessage(`Navegando a: ${fruit.name} 🍎`);
+    // showMessage(`Navegando a: ${fruit.name}`); // Podríamos eliminar este snackbar para no saturar
     console.log("Fruit selected:", fruit);
 
     router.push({
@@ -75,20 +77,15 @@ export default function ExploreScreen() {
   };
 
   const handleSearch = () => {
-    if (searchQuery.trim()) {
-      router.push({
-        pathname: "/search",
-        params: { query: searchQuery },
-      });
-    } else {
-      router.push({
-        pathname: "/search",
-      });
-    }
+    // Si la búsqueda local es el enfoque principal de este Searchbar,
+    // el onSubmitEditing simplemente filtra la lista mostrada.
+    // Si se presiona el icono de tune, se va a la búsqueda avanzada.
+    showMessage(`Buscando: "${searchQuery}"`);
   };
 
   const handleAdvancedSearch = () => {
     router.push("/search");
+    showMessage("Navegando a búsqueda avanzada.");
   };
 
   const showMessage = (message: string) => {
@@ -150,12 +147,13 @@ export default function ExploreScreen() {
         styles.header,
         { backgroundColor: theme.colors.primaryContainer },
       ]}
-      elevation={3}
+      elevation={theme.dark ? 2 : 3}
     >
+      {/* Asumo que IconSymbol renderiza MaterialCommunityIcons o similar */}
       <IconSymbol
         size={60}
         color={theme.colors.onPrimaryContainer}
-        name="apple.logo"
+        name="apple.logo" // Ajusta el nombre del icono si IconSymbol usa un conjunto diferente (ej: "apple")
         style={styles.headerIcon}
       />
       <Text
@@ -168,7 +166,7 @@ export default function ExploreScreen() {
         variant="bodyMedium"
         style={[styles.subtitle, { color: theme.colors.onPrimaryContainer }]}
       >
-        Descubre el mundo de las frutas y sus beneficios nutricionales
+        Descubre el mundo de las frutas y sus beneficios nutricionales.
       </Text>
 
       {nutritionStats && (
@@ -177,7 +175,7 @@ export default function ExploreScreen() {
             styles.statsContainer,
             { backgroundColor: theme.colors.surface },
           ]}
-          elevation={2}
+          elevation={theme.dark ? 1 : 2}
         >
           <View style={styles.statItem}>
             <Text
@@ -220,7 +218,7 @@ export default function ExploreScreen() {
   const renderSearchSection = () => (
     <Surface
       style={[styles.searchSection, { backgroundColor: theme.colors.surface }]}
-      elevation={1}
+      elevation={theme.dark ? 0 : 1} // Menor elevación para la barra de búsqueda
     >
       <View style={styles.searchContainer}>
         <Searchbar
@@ -237,8 +235,8 @@ export default function ExploreScreen() {
           placeholderTextColor={theme.colors.onSurfaceVariant}
           right={() => (
             <IconButton
-              icon="tune"
-              size={20}
+              icon="tune-variant" // Icono más moderno para filtros
+              size={24} // Aumentar tamaño
               onPress={handleAdvancedSearch}
               iconColor={theme.colors.primary}
             />
@@ -257,29 +255,113 @@ export default function ExploreScreen() {
               icon="sort"
               compact
               style={styles.sortButton}
+              labelStyle={{ color: theme.colors.primary }} // Color del texto del botón
+              textColor={theme.colors.primary} // Color del icono
             >
-              Ordenar
+              Ordenar por
             </Button>
           }
         >
-          <Menu.Item
-            onPress={() => handleSort("name")}
-            title="Por nombre"
-            leadingIcon="alphabetical"
-            trailingIcon={sortBy === "name" ? "check" : undefined}
-          />
-          <Menu.Item
-            onPress={() => handleSort("calories")}
-            title="Por calorías"
-            leadingIcon="fire"
-            trailingIcon={sortBy === "calories" ? "check" : undefined}
-          />
-          <Menu.Item
-            onPress={() => handleSort("protein")}
-            title="Por proteína"
-            leadingIcon="dumbbell"
-            trailingIcon={sortBy === "protein" ? "check" : undefined}
-          />
+          {/* Usar List.Item para mayor coherencia con Material Design */}
+          <List.Section>
+            <List.Subheader>Ordenar por:</List.Subheader>
+            <List.Item
+              title="Nombre"
+              left={() => (
+                <MaterialCommunityIcons
+                  name="alphabetical-variant"
+                  size={24}
+                  color={theme.colors.onSurface}
+                />
+              )}
+              right={() =>
+                sortBy === "name" && (
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={24}
+                    color={theme.colors.primary}
+                  />
+                )
+              }
+              onPress={() => handleSort("name")}
+              style={{
+                backgroundColor:
+                  sortBy === "name"
+                    ? theme.colors.primaryContainer
+                    : "transparent",
+              }}
+              titleStyle={{
+                color:
+                  sortBy === "name"
+                    ? theme.colors.onPrimaryContainer
+                    : theme.colors.onSurface,
+              }}
+            />
+            <List.Item
+              title="Calorías"
+              left={() => (
+                <MaterialCommunityIcons
+                  name="fire"
+                  size={24}
+                  color={theme.colors.onSurface}
+                />
+              )}
+              right={() =>
+                sortBy === "calories" && (
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={24}
+                    color={theme.colors.primary}
+                  />
+                )
+              }
+              onPress={() => handleSort("calories")}
+              style={{
+                backgroundColor:
+                  sortBy === "calories"
+                    ? theme.colors.primaryContainer
+                    : "transparent",
+              }}
+              titleStyle={{
+                color:
+                  sortBy === "calories"
+                    ? theme.colors.onPrimaryContainer
+                    : theme.colors.onSurface,
+              }}
+            />
+            <List.Item
+              title="Proteína"
+              left={() => (
+                <MaterialCommunityIcons
+                  name="dumbbell"
+                  size={24}
+                  color={theme.colors.onSurface}
+                />
+              )}
+              right={() =>
+                sortBy === "protein" && (
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={24}
+                    color={theme.colors.primary}
+                  />
+                )
+              }
+              onPress={() => handleSort("protein")}
+              style={{
+                backgroundColor:
+                  sortBy === "protein"
+                    ? theme.colors.primaryContainer
+                    : "transparent",
+              }}
+              titleStyle={{
+                color:
+                  sortBy === "protein"
+                    ? theme.colors.onPrimaryContainer
+                    : theme.colors.onSurface,
+              }}
+            />
+          </List.Section>
         </Menu>
 
         <Button
@@ -288,6 +370,8 @@ export default function ExploreScreen() {
           icon="magnify-plus"
           compact
           style={styles.advancedButton}
+          labelStyle={{ color: theme.colors.primary }}
+          textColor={theme.colors.primary}
         >
           Búsqueda avanzada
         </Button>
@@ -301,10 +385,10 @@ export default function ExploreScreen() {
         styles.errorContainer,
         { backgroundColor: theme.colors.errorContainer },
       ]}
-      elevation={2}
+      elevation={theme.dark ? 1 : 2}
     >
-      <IconSymbol
-        name="exclamationmark.triangle"
+      <MaterialCommunityIcons
+        name="alert-circle-outline" // Icono de error más amigable
         size={48}
         color={theme.colors.onErrorContainer}
         style={styles.errorIcon}
@@ -338,10 +422,10 @@ export default function ExploreScreen() {
         styles.emptyContainer,
         { backgroundColor: theme.colors.surfaceVariant },
       ]}
-      elevation={1}
+      elevation={theme.dark ? 0 : 1}
     >
-      <IconSymbol
-        name="questionmark.folder"
+      <MaterialCommunityIcons
+        name="fruit-watermelon"
         size={64}
         color={theme.colors.onSurfaceVariant}
         style={styles.emptyIcon}
@@ -358,13 +442,14 @@ export default function ExploreScreen() {
       >
         {searchQuery
           ? `No hay resultados para "${searchQuery}". Intenta con otro término.`
-          : "Intenta recargar la lista para ver las frutas disponibles"}
+          : "Intenta recargar la lista para ver las frutas disponibles."}
       </Text>
       {searchQuery ? (
         <Button
           mode="outlined"
           onPress={() => setSearchQuery("")}
           style={styles.refreshButton}
+          textColor={theme.colors.primary}
         >
           Limpiar búsqueda
         </Button>
@@ -373,15 +458,16 @@ export default function ExploreScreen() {
           mode="outlined"
           onPress={handleRefresh}
           style={styles.refreshButton}
+          textColor={theme.colors.primary}
         >
-          Recargar
+          Recargar lista
         </Button>
       )}
     </Surface>
   );
 
   const renderSkeletons = () => (
-    <View>
+    <View style={styles.skeletonContainer}>
       {Array.from({ length: 6 }, (_, index) => (
         <FruitCardSkeleton key={`skeleton-${index}`} index={index} />
       ))}
@@ -393,13 +479,15 @@ export default function ExploreScreen() {
       return renderError();
     }
 
-    if (isLoading) {
+    if (isLoading && fruits.length === 0) {
+      // Mostrar skeletons solo si no hay frutas cargadas aún
       return renderSkeletons();
     }
 
     const filteredFruits = getFilteredFruits();
 
-    if (filteredFruits.length === 0) {
+    if (filteredFruits.length === 0 && !isLoading) {
+      // Mostrar estado vacío solo si no hay frutas y no está cargando
       return renderEmptyState();
     }
 
@@ -410,10 +498,11 @@ export default function ExploreScreen() {
             variant="titleMedium"
             style={[styles.fruitsTitle, { color: theme.colors.onBackground }]}
           >
-            🍎 {searchQuery ? "Resultados" : "Todas las frutas"} (
+            <MaterialCommunityIcons name="food-apple" size={20} />{" "}
+            {searchQuery ? "Resultados" : "Todas las frutas"} (
             {filteredFruits.length})
           </Text>
-          {searchQuery && (
+          {searchQuery.trim() !== "" && ( // Mostrar info de búsqueda solo si hay query
             <Text
               variant="bodySmall"
               style={[
@@ -421,7 +510,7 @@ export default function ExploreScreen() {
                 { color: theme.colors.onSurfaceVariant },
               ]}
             >
-              Buscando: "{searchQuery}"
+              Mostrando resultados para: "{searchQuery}"
             </Text>
           )}
         </View>
@@ -437,6 +526,7 @@ export default function ExploreScreen() {
     );
   };
 
+  // Pantalla de carga inicial antes de que la vista esté enfocada y cargue datos
   if (!isScreenFocused) {
     return (
       <SafeAreaView
@@ -444,6 +534,12 @@ export default function ExploreScreen() {
       >
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text
+            variant="titleMedium"
+            style={{ marginTop: 16, color: theme.colors.onBackground }}
+          >
+            Cargando frutas...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -462,6 +558,7 @@ export default function ExploreScreen() {
             onRefresh={handleRefresh}
             colors={[theme.colors.primary]}
             tintColor={theme.colors.primary}
+            progressBackgroundColor={theme.colors.surfaceVariant} // Fondo para el indicador de refresh
           />
         }
         contentContainerStyle={styles.scrollContent}
@@ -471,17 +568,17 @@ export default function ExploreScreen() {
         {renderSearchSection()}
         {renderContent()}
 
-        {/* Espaciado inferior para el FAB */}
+        {/* Espaciado inferior para evitar que el contenido sea cubierto por el FAB */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* FAB */}
+      {/* FAB para Búsqueda Avanzada/Filtros */}
       <FAB
-        icon="refresh"
+        icon="filter-variant" // Nuevo icono más relevante para la acción principal
+        label="Filtrar" // Etiqueta para una mejor comprensión
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={handleRefresh}
-        loading={isLoading}
-        disabled={isLoading}
+        onPress={handleAdvancedSearch} // Acción principal del FAB
+        color={theme.colors.onPrimary} // Color del icono y texto del FAB
       />
 
       {/* Snackbar */}
@@ -493,6 +590,7 @@ export default function ExploreScreen() {
         action={{
           label: "OK",
           onPress: () => setShowSnackbar(false),
+          textColor: theme.colors.inversePrimary, // Color para el texto de la acción del Snackbar
         }}
       >
         <Text style={{ color: theme.colors.inverseOnSurface }}>
@@ -516,17 +614,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 100, // Espacio para que el FAB no cubra el contenido
   },
   header: {
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     padding: 24,
-    marginBottom: 8,
+    marginBottom: 16, // Aumentado el margen inferior
     alignItems: "center",
   },
   headerIcon: {
-    marginBottom: 12,
+    marginBottom: 16, // Aumentado el margen inferior
   },
   title: {
     textAlign: "center",
@@ -535,8 +633,9 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 24, // Aumentado el margen inferior
     paddingHorizontal: 16,
+    lineHeight: 22,
   },
   statsContainer: {
     flexDirection: "row",
@@ -545,109 +644,138 @@ const styles = StyleSheet.create({
     marginTop: 8,
     width: "100%",
     justifyContent: "space-around",
+    gap: 16, // Espacio entre los ítems de las estadísticas
   },
   statItem: {
     alignItems: "center",
+    flex: 1, // Para que cada ítem ocupe el mismo espacio
   },
 
   // Search section styles
   searchSection: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: 8,
+    marginBottom: 16, // Aumentado el margen inferior
   },
   searchContainer: {
-    marginBottom: 12,
+    marginBottom: 16, // Aumentado el margen inferior
   },
   searchbar: {
     elevation: 0,
-    borderRadius: 12,
+    borderRadius: 16, // Más redondeado
+    height: 56, // Altura estándar para input de Material Design
   },
   controlsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    flexWrap: "wrap", // Para que los botones se ajusten en pantallas pequeñas
   },
   sortButton: {
-    borderRadius: 20,
+    borderRadius: 28, // Más redondeado
+    minWidth: 120, // Ancho mínimo para el botón
+    height: 48, // Altura estándar para botones de Material Design
+    justifyContent: "center",
   },
   advancedButton: {
-    borderRadius: 20,
+    borderRadius: 28,
+    height: 48,
+    justifyContent: "center",
   },
 
   // Fruits section styles
   fruitsContainer: {
     paddingHorizontal: 16,
+    paddingTop: 8, // Pequeño padding superior para separación
   },
   fruitsHeader: {
-    marginBottom: 8,
+    marginBottom: 16, // Más espacio debajo del encabezado de frutas
   },
   fruitsTitle: {
     fontWeight: "bold",
-    fontSize: 18,
+    fontSize: 20, // Un poco más grande
     marginBottom: 4,
+    flexDirection: "row", // Para alinear icono y texto
+    alignItems: "center",
+    gap: 8, // Espacio entre icono y texto
   },
   searchInfo: {
     fontStyle: "italic",
+    marginTop: 4,
+  },
+  skeletonContainer: {
+    paddingHorizontal: 16,
   },
 
   // Error styles
   errorContainer: {
-    margin: 16,
+    marginHorizontal: 16,
+    marginTop: 16, // Margen superior
     padding: 24,
-    borderRadius: 16,
+    borderRadius: 20, // Más redondeado
     alignItems: "center",
   },
   errorIcon: {
-    marginBottom: 16,
+    marginBottom: 20, // Más margen
   },
   errorTitle: {
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 12, // Más margen
     textAlign: "center",
   },
   errorMessage: {
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 20, // Más margen
+    lineHeight: 22,
   },
   retryButton: {
-    borderRadius: 24,
-    paddingHorizontal: 16,
+    borderRadius: 28, // Más redondeado
+    height: 52, // Altura consistente
+    justifyContent: "center",
+    paddingHorizontal: 20, // Más padding horizontal
   },
 
   // Empty state styles
   emptyContainer: {
-    margin: 16,
+    marginHorizontal: 16,
+    marginTop: 16, // Margen superior
     padding: 32,
-    borderRadius: 16,
+    borderRadius: 20, // Más redondeado
     alignItems: "center",
   },
   emptyIcon: {
-    marginBottom: 16,
+    marginBottom: 20, // Más margen
   },
   emptyTitle: {
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 12, // Más margen
     textAlign: "center",
   },
   emptyMessage: {
     textAlign: "center",
-    marginBottom: 16,
-    lineHeight: 20,
+    marginBottom: 20, // Más margen
+    lineHeight: 22,
   },
   refreshButton: {
-    borderRadius: 24,
+    borderRadius: 28, // Más redondeado
+    height: 52, // Altura consistente
+    justifyContent: "center",
+    paddingHorizontal: 20, // Más padding horizontal
   },
 
   // FAB and spacing
   bottomSpacing: {
-    height: 80,
+    height: 90, // Un poco más de espacio para el FAB con etiqueta
   },
   fab: {
     position: "absolute",
-    margin: 16,
+    margin: 20, // Margen consistente con Material 3
     right: 0,
     bottom: 0,
-    borderRadius: 28,
+    borderRadius: 16, // FAB puede tener bordes menos redondeados en Material 3 Expressive
+    // Opcional: si quieres un FAB extendido con texto
+    // width: 140,
+    // justifyContent: 'flex-start',
+    // paddingHorizontal: 20,
   },
 });

@@ -1,5 +1,6 @@
 import { HelloWave } from "@/components/HelloWave";
 import { useTheme } from "@/contexts/ThemeContext";
+import { MaterialCommunityIcons } from "@expo/vector-icons"; // Importamos los iconos
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
@@ -44,15 +45,15 @@ export default function HomeScreen() {
             styles.headerCard,
             { backgroundColor: theme.colors.primaryContainer },
           ]}
-          elevation={3}
+          elevation={theme.dark ? 2 : 3} // Ajusta la elevación según el tema
         >
           <Card.Content style={styles.headerContent}>
             <Surface
               style={[
                 styles.logoContainer,
-                { backgroundColor: theme.colors.surface },
+                { backgroundColor: theme.colors.surfaceVariant }, // Usar surfaceVariant para un contraste sutil
               ]}
-              elevation={2}
+              elevation={theme.dark ? 1 : 2}
             >
               <Image
                 source={require("@/assets/images/partial-react-logo.png")}
@@ -67,9 +68,8 @@ export default function HomeScreen() {
                 { color: theme.colors.onPrimaryContainer },
               ]}
             >
-              ¡Bienvenido a Fruity Facts! 🍊
+              ¡Bienvenido a Fruity Facts! <HelloWave />
             </Text>
-            <HelloWave />
             <Text
               variant="bodyMedium"
               style={[
@@ -77,7 +77,7 @@ export default function HomeScreen() {
                 { color: theme.colors.onPrimaryContainer },
               ]}
             >
-              Descubre el mundo de las frutas y sus beneficios nutricionales
+              Descubre el mundo de las frutas y sus beneficios nutricionales.
             </Text>
           </Card.Content>
         </Card>
@@ -88,14 +88,15 @@ export default function HomeScreen() {
             styles.actionsCard,
             { backgroundColor: theme.colors.surface },
           ]}
-          elevation={2}
+          elevation={theme.dark ? 1 : 2}
         >
           <Card.Content>
             <Text
-              variant="headlineSmall"
+              variant="titleLarge" // Cambiado a titleLarge para un mejor impacto
               style={{ color: theme.colors.primary, marginBottom: 16 }}
             >
-              🚀 Acciones Rápidas
+              <MaterialCommunityIcons name="rocket" size={24} /> Acciones
+              Rápidas
             </Text>
 
             <Button
@@ -138,6 +139,8 @@ export default function HomeScreen() {
               onPress={handleNavigateToCompare}
               icon="scale-balance"
               style={styles.actionButton}
+              textColor={theme.colors.onSurface} // Color del texto para outlined
+              labelStyle={{ color: theme.colors.primary }} // Color del label
             >
               Comparar Frutas
             </Button>
@@ -150,14 +153,15 @@ export default function HomeScreen() {
             styles.featuresCard,
             { backgroundColor: theme.colors.surface },
           ]}
-          elevation={2}
+          elevation={theme.dark ? 1 : 2}
         >
           <Card.Content>
             <Text
-              variant="headlineSmall"
+              variant="titleLarge" // Cambiado a titleLarge
               style={{ color: theme.colors.secondary, marginBottom: 16 }}
             >
-              ✨ Características
+              <MaterialCommunityIcons name="star-four-points" size={24} />{" "}
+              Características
             </Text>
 
             <View style={styles.featuresList}>
@@ -166,6 +170,7 @@ export default function HomeScreen() {
                   size={40}
                   icon="database"
                   style={{ backgroundColor: theme.colors.primaryContainer }}
+                  color={theme.colors.onPrimaryContainer} // Color del icono dentro del Avatar
                 />
                 <View style={styles.featureText}>
                   <Text
@@ -186,8 +191,9 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <Avatar.Icon
                   size={40}
-                  icon="heart"
+                  icon="heart-outline" // Cambiado a outline para un estilo más suave
                   style={{ backgroundColor: theme.colors.secondaryContainer }}
+                  color={theme.colors.onSecondaryContainer}
                 />
                 <View style={styles.featureText}>
                   <Text
@@ -208,8 +214,9 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <Avatar.Icon
                   size={40}
-                  icon="compare"
+                  icon="scale-balance" // Reutilizamos el icono de comparar
                   style={{ backgroundColor: theme.colors.tertiaryContainer }}
+                  color={theme.colors.onTertiaryContainer}
                 />
                 <View style={styles.featureText}>
                   <Text
@@ -232,6 +239,7 @@ export default function HomeScreen() {
                   size={40}
                   icon="magnify"
                   style={{ backgroundColor: theme.colors.primaryContainer }}
+                  color={theme.colors.onPrimaryContainer}
                 />
                 <View style={styles.featureText}>
                   <Text
@@ -255,20 +263,27 @@ export default function HomeScreen() {
         {/* Getting Started */}
         <Card
           style={[styles.stepCard, { backgroundColor: theme.colors.surface }]}
-          elevation={2}
+          elevation={theme.dark ? 1 : 2}
         >
           <Card.Content>
             <Text
-              variant="headlineSmall"
+              variant="titleLarge" // Cambiado a titleLarge
               style={{ color: theme.colors.tertiary, marginBottom: 16 }}
             >
-              � Primeros Pasos
+              <MaterialCommunityIcons name="gesture-tap" size={24} /> Primeros
+              Pasos
             </Text>
 
             <View style={styles.stepsList}>
               <View style={styles.stepItem}>
                 <Chip
-                  icon="numeric-1"
+                  icon={() => (
+                    <MaterialCommunityIcons
+                      name="numeric-1-box" // Icono de número en un cuadro
+                      size={20}
+                      color={theme.colors.onPrimaryContainer}
+                    />
+                  )}
                   style={[
                     styles.stepChip,
                     { backgroundColor: theme.colors.primaryContainer },
@@ -287,7 +302,13 @@ export default function HomeScreen() {
 
               <View style={styles.stepItem}>
                 <Chip
-                  icon="numeric-2"
+                  icon={() => (
+                    <MaterialCommunityIcons
+                      name="numeric-2-box"
+                      size={20}
+                      color={theme.colors.onSecondaryContainer}
+                    />
+                  )}
                   style={[
                     styles.stepChip,
                     { backgroundColor: theme.colors.secondaryContainer },
@@ -306,7 +327,13 @@ export default function HomeScreen() {
 
               <View style={styles.stepItem}>
                 <Chip
-                  icon="numeric-3"
+                  icon={() => (
+                    <MaterialCommunityIcons
+                      name="numeric-3-box"
+                      size={20}
+                      color={theme.colors.onTertiaryContainer}
+                    />
+                  )}
                   style={[
                     styles.stepChip,
                     { backgroundColor: theme.colors.tertiaryContainer },
@@ -329,14 +356,15 @@ export default function HomeScreen() {
         {/* Development Info */}
         <Card
           style={[styles.stepCard, { backgroundColor: theme.colors.surface }]}
-          elevation={2}
+          elevation={theme.dark ? 1 : 2}
         >
           <Card.Content>
             <Text
-              variant="headlineSmall"
+              variant="titleLarge" // Cambiado a titleLarge
               style={{ color: theme.colors.primary, marginBottom: 8 }}
             >
-              🛠️ Para Desarrolladores
+              <MaterialCommunityIcons name="tools" size={24} /> Para
+              Desarrolladores
             </Text>
             <Text
               variant="bodyMedium"
@@ -370,13 +398,14 @@ export default function HomeScreen() {
             styles.infoCard,
             { backgroundColor: theme.colors.tertiaryContainer },
           ]}
-          elevation={1}
+          elevation={theme.dark ? 0 : 1}
         >
           <Card.Content style={styles.infoContent}>
             <Avatar.Icon
               size={48}
               icon="fruit-citrus"
               style={{ backgroundColor: theme.colors.tertiary }}
+              color={theme.colors.onTertiary} // Color del icono dentro del Avatar
             />
             <View style={styles.infoText}>
               <Text
@@ -408,93 +437,104 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: 16, // Espaciado horizontal para el contenido
     paddingBottom: 32,
+    paddingTop: 16, // Añadir un poco de padding superior para que no esté pegado al AppBar
   },
   headerCard: {
-    marginBottom: 16,
-    borderRadius: 16,
+    marginBottom: 24, // Aumentado el margen inferior para más espacio
+    borderRadius: 20, // Bordes más redondeados para un look moderno
+    overflow: "hidden", // Asegura que el contenido respete el borderRadius
   },
   headerContent: {
     alignItems: "center",
-    padding: 8,
+    paddingVertical: 32, // Más padding vertical
+    paddingHorizontal: 16,
   },
   logoContainer: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 16, // Bordes más redondeados para el contenedor del logo
+    padding: 20, // Más padding
+    marginBottom: 24, // Más margen inferior
   },
   reactLogo: {
-    height: 120,
-    width: 160,
+    height: 100, // Ajuste de tamaño para el logo
+    width: 140,
   },
   welcomeText: {
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 12,
     fontWeight: "bold",
   },
   description: {
     textAlign: "center",
     marginTop: 8,
-    opacity: 0.9,
+    lineHeight: 22, // Mejora la legibilidad
   },
   actionsCard: {
-    marginBottom: 16,
-    borderRadius: 12,
+    marginBottom: 24, // Margen consistente
+    borderRadius: 16,
   },
   actionButton: {
     marginBottom: 12,
-    borderRadius: 24,
+    borderRadius: 28, // Más redondeado
+    height: 56, // Altura estándar para botones de Material Design
+    justifyContent: "center", // Centra el contenido verticalmente
   },
   featuresCard: {
-    marginBottom: 16,
-    borderRadius: 12,
+    marginBottom: 24, // Margen consistente
+    borderRadius: 16,
   },
   featuresList: {
-    gap: 16,
+    gap: 20,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 16,
   },
   featureText: {
     flex: 1,
   },
   stepCard: {
-    marginBottom: 12,
-    borderRadius: 12,
+    marginBottom: 16,
+    borderRadius: 16,
   },
   stepsList: {
-    gap: 12,
+    gap: 16,
   },
   stepItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 16,
   },
   stepChip: {
-    minWidth: 80,
+    minWidth: 90,
+    justifyContent: "center",
+    paddingVertical: 4,
+    borderRadius: 20,
   },
   platformChip: {
-    marginTop: 8,
+    marginTop: 16,
     alignSelf: "flex-start",
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
   },
   infoCard: {
-    marginTop: 8,
-    marginBottom: 24,
-    borderRadius: 12,
+    marginTop: 16,
+    marginBottom: 32,
+    borderRadius: 16,
   },
   infoContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 16,
+    paddingVertical: 20,
   },
   infoText: {
     flex: 1,

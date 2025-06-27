@@ -1,17 +1,19 @@
 import { useTheme } from "@/contexts/ThemeContext";
-import React from "react";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { Surface, Text } from "react-native-paper";
 import Animated, {
   Extrapolate,
+  FadeIn,
+  FadeOut,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { IconSymbol } from "./ui/IconSymbol";
-
-const AnimatedView = Animated.createAnimatedComponent(View);
+import { SearchStepItem } from "./SearchStepItem";
 
 interface SearchProgressIndicatorProps {
   currentStep: number;
@@ -30,22 +32,27 @@ const searchSteps: SearchStep[] = [
   {
     title: "Búsqueda directa",
     description: "Buscando por el nombre exacto de la fruta",
-    icon: "magnifyingglass",
+    icon: "magnify",
   },
   {
     title: "Búsqueda con variaciones",
-    description: "Probando con términos como 'fresh' y 'raw'",
-    icon: "list.bullet",
+    description: "Probando con términos como 'fresco' y 'crudo'",
+    icon: "format-list-bulleted",
   },
   {
     title: "Búsqueda ampliada",
     description: "Explorando la base de datos USDA",
-    icon: "server.rack",
+    icon: "database-search",
   },
   {
     title: "Procesando resultados",
     description: "Analizando la información encontrada",
-    icon: "gearshape.2.fill",
+    icon: "cog-outline",
+  },
+  {
+    title: "Refinando información",
+    description: "Organizando datos para mostrar",
+    icon: "chart-bar",
   },
 ];
 
@@ -55,9 +62,66 @@ export const SearchProgressIndicator: React.FC<
   const { theme } = useTheme();
   const progressAnim = useSharedValue(0);
 
-  React.useEffect(() => {
+  // Animación para el icono de búsqueda del header
+  const headerIconScale = useSharedValue(1);
+  const headerIconOpacity = useSharedValue(0);
+
+  // Animaciones para la "ola" o "ripple"
+  const waveScale = useSharedValue(0);
+  const waveOpacity = useSharedValue(0);
+
+  // Referencias para controlar el estado sin acceder a .value durante el render
+  const waveAnimationStarted = useRef(false);
+  const headerAnimationStarted = useRef(false);
+  const waveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
     progressAnim.value = withTiming(progress / 100, { duration: 500 });
+
+    // Animación de la "ola" - solo iniciar una vez
+    if (progress > 0 && !waveAnimationStarted.current) {
+      waveAnimationStarted.current = true;
+      waveScale.value = withTiming(1.5, { duration: 1500 });
+      waveOpacity.value = withTiming(0, { duration: 1500 });
+    }
+
+    // Animación para el icono principal del header - solo iniciar una vez
+    if (progress > 0 && !headerAnimationStarted.current) {
+      headerAnimationStarted.current = true;
+      headerIconScale.value = withSpring(1.1, { damping: 10, stiffness: 100 });
+      headerIconOpacity.value = withTiming(1, { duration: 300 });
+    }
+
+    // Limpiar intervalo anterior si existe
+    if (waveIntervalRef.current) {
+      clearInterval(waveIntervalRef.current);
+    }
+
+    // Repetir la animación de la ola cada cierto tiempo
+    if (progress > 0 && progress < 100) {
+      waveIntervalRef.current = setInterval(() => {
+        waveScale.value = 0;
+        waveOpacity.value = 0.5;
+        waveScale.value = withTiming(1.5, { duration: 1500 });
+        waveOpacity.value = withTiming(0, { duration: 1500 });
+      }, 2000);
+    }
+
+    return () => {
+      if (waveIntervalRef.current) {
+        clearInterval(waveIntervalRef.current);
+      }
+    };
   }, [progress]);
+
+  // Limpiar al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (waveIntervalRef.current) {
+        clearInterval(waveIntervalRef.current);
+      }
+    };
+  }, []);
 
   const progressAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -70,40 +134,72 @@ export const SearchProgressIndicator: React.FC<
     };
   });
 
+  const waveAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: waveScale.value }],
+      opacity: waveOpacity.value,
+    };
+  });
+
+  // Animación para el icono principal del header
+  const headerIconAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: headerIconScale.value }],
+      opacity: headerIconOpacity.value,
+    };
+  });
+
   return (
     <Surface
-      style={[styles.container, { backgroundColor: theme.colors.surface }]}
-      elevation={2}
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.surfaceContainerLow },
+      ]}
+      elevation={theme.dark ? 1 : 2}
     >
       <View style={styles.header}>
-        <IconSymbol
-          name="magnifyingglass"
-          size={24}
-          color={theme.colors.primary}
+        {/* Onda de animación detrás del icono principal */}
+        <Animated.View
+          style={[
+            styles.waveCircle,
+            { backgroundColor: theme.colors.primaryContainer },
+            waveAnimatedStyle,
+          ]}
         />
+        {/* Icono principal animado */}
+        <Animated.View style={headerIconAnimatedStyle}>
+          <MaterialCommunityIcons
+            name="leaf-maple"
+            size={48}
+            color={theme.colors.primary}
+          />
+        </Animated.View>
+
         <Text
-          variant="titleMedium"
-          style={{ color: theme.colors.onSurface, marginLeft: 12 }}
+          variant="titleLarge"
+          style={{ color: theme.colors.onSurface, marginLeft: 16 }}
         >
           Buscando información nutricional
         </Text>
       </View>
 
-      <Text
-        variant="bodyMedium"
+      <Animated.Text
+        entering={FadeIn.delay(300).duration(500)}
+        exiting={FadeOut.duration(300)}
+        key={currentSearchTerm}
         style={{ color: theme.colors.outline, marginBottom: 16 }}
       >
         Término actual: "{currentSearchTerm}"
-      </Text>
+      </Animated.Text>
 
       <View style={styles.progressSection}>
         <View
           style={[
             styles.progressTrack,
-            { backgroundColor: theme.colors.outline },
+            { backgroundColor: theme.colors.surfaceContainerHigh },
           ]}
         >
-          <AnimatedView
+          <Animated.View
             style={[
               styles.progressFill,
               { backgroundColor: theme.colors.primary },
@@ -121,57 +217,21 @@ export const SearchProgressIndicator: React.FC<
 
       <View style={styles.stepsContainer}>
         {searchSteps.map((step, index) => {
-          const isActive =
-            index ===
-            Math.floor(((currentStep - 1) * searchSteps.length) / totalSteps);
-          const isCompleted =
-            index <
-            Math.floor(((currentStep - 1) * searchSteps.length) / totalSteps);
+          const activeStepIndex = Math.floor(
+            ((currentStep - 1) / totalSteps) * searchSteps.length
+          );
+          const isActive = index === activeStepIndex;
+          const isCompleted = index < activeStepIndex;
 
           return (
-            <View key={index} style={styles.stepItem}>
-              <View
-                style={[
-                  styles.stepIcon,
-                  {
-                    backgroundColor: isCompleted
-                      ? theme.colors.primary
-                      : isActive
-                      ? theme.colors.primaryContainer
-                      : theme.colors.outline,
-                  },
-                ]}
-              >
-                <IconSymbol
-                  name={isCompleted ? "checkmark" : (step.icon as any)}
-                  size={16}
-                  color={
-                    isCompleted || isActive
-                      ? theme.colors.onPrimary
-                      : theme.colors.onSurface
-                  }
-                />
-              </View>
-              <View style={styles.stepContent}>
-                <Text
-                  variant="bodyMedium"
-                  style={{
-                    color: isActive
-                      ? theme.colors.primary
-                      : theme.colors.onSurface,
-                    fontWeight: isActive ? "bold" : "normal",
-                  }}
-                >
-                  {step.title}
-                </Text>
-                <Text
-                  variant="bodySmall"
-                  style={{ color: theme.colors.outline }}
-                >
-                  {step.description}
-                </Text>
-              </View>
-            </View>
+            <SearchStepItem
+              key={index}
+              title={step.title}
+              description={step.description}
+              icon={step.icon}
+              isActive={isActive}
+              isCompleted={isCompleted}
+            />
           );
         })}
       </View>
@@ -181,43 +241,42 @@ export const SearchProgressIndicator: React.FC<
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    borderRadius: 16,
-    margin: 16,
+    padding: 24,
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginVertical: 16,
+    overflow: "hidden",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    justifyContent: "center",
+    marginBottom: 24,
+    position: "relative",
+  },
+  waveCircle: {
+    position: "absolute",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    opacity: 0,
+    zIndex: 0,
   },
   progressSection: {
     marginBottom: 24,
+    alignItems: "center",
   },
   progressTrack: {
-    height: 6,
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
     overflow: "hidden",
+    width: "100%",
   },
   progressFill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: 4,
   },
   stepsContainer: {
-    gap: 12,
-  },
-  stepItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  stepIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  stepContent: {
-    flex: 1,
+    gap: 16,
   },
 });

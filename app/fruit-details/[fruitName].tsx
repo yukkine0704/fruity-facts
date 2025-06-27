@@ -1,9 +1,9 @@
 import { NutritionDetailsCard } from "@/components/NutritionDetailsCard";
 import { SearchProgressIndicator } from "@/components/SearchProgressIndicator";
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useFoodDetails, useFoodSearch } from "@/hooks/useFDCStore";
 import { SearchResultFood } from "@/types/fdc";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -74,6 +74,7 @@ export default function FruitDetailsScreen() {
 
   useEffect(() => {
     devLog("Component mounted", { fruitName });
+    // Animar la entrada de la vista principal
     fadeAnim.value = withTiming(1, { duration: 600 });
     slideAnim.value = withSpring(0, { damping: 15, stiffness: 100 });
   }, []);
@@ -85,10 +86,11 @@ export default function FruitDetailsScreen() {
       searchFruitInformation(decodedFruitName);
     } else {
       devError("No fruit name provided");
+      setSearchStage("error"); // Pasa a estado de error si no hay nombre de fruta
     }
   }, [fruitName]);
 
-  // Log de cambios en el estado de búsqueda
+  // Logs de depuración (mantener para desarrollo, eliminar en producción)
   useEffect(() => {
     devLog("Search stage changed", {
       searchStage,
@@ -98,7 +100,6 @@ export default function FruitDetailsScreen() {
     });
   }, [searchStage, searchProgress, currentStep, currentSearchTerm]);
 
-  // Log de cambios en resultados de búsqueda
   useEffect(() => {
     if (searchResults) {
       devLog("Search results updated", {
@@ -109,7 +110,6 @@ export default function FruitDetailsScreen() {
     }
   }, [searchResults]);
 
-  // Log de cambios en la comida actual
   useEffect(() => {
     if (currentFood) {
       devLog("Current food loaded", {
@@ -120,7 +120,6 @@ export default function FruitDetailsScreen() {
     }
   }, [currentFood]);
 
-  // Log de errores
   useEffect(() => {
     if (searchError) {
       devError("Search error occurred", searchError);
@@ -136,6 +135,7 @@ export default function FruitDetailsScreen() {
   const searchFruitInformation = async (fruitNameParam: string) => {
     if (!fruitNameParam) {
       devError("searchFruitInformation called without fruitName");
+      setSearchStage("error"); // Asegurar que el estado de error se activa
       return;
     }
 
@@ -162,6 +162,7 @@ export default function FruitDetailsScreen() {
 
       devLog("Search terms prepared", { searchTerms });
 
+      let foundResults = false;
       for (let i = 0; i < searchTerms.length; i++) {
         const term = searchTerms[i];
         setCurrentSearchTerm(term);
@@ -200,6 +201,7 @@ export default function FruitDetailsScreen() {
         });
 
         if (hasResults) {
+          foundResults = true;
           devLog("Found results, stopping search", {
             finalTerm: term,
             totalResults:
@@ -207,16 +209,16 @@ export default function FruitDetailsScreen() {
                 ? searchResults[0].foods.length
                 : 0,
           });
-          break;
+          break; // Detener la búsqueda si se encuentran resultados
         }
       }
 
       devLog("Search process completed", {
-        finalStage: "results",
-        hasResults: searchResults && searchResults.length > 0,
+        finalStage: foundResults ? "results" : "error", // Si no se encontraron resultados, pasa a error
+        hasResults: foundResults,
       });
 
-      setSearchStage("results");
+      setSearchStage(foundResults ? "results" : "error"); // Actualizar el estado basado en si se encontraron resultados
     } catch (error) {
       devError("Error in searchFruitInformation", error);
       setSearchStage("error");
@@ -248,6 +250,9 @@ export default function FruitDetailsScreen() {
     devLog("Retry button pressed");
     if (fruitName) {
       searchFruitInformation(decodeURIComponent(fruitName));
+    } else {
+      devLog("No fruitName to retry with.");
+      router.back(); // Si no hay fruta, simplemente regresa
     }
   };
 
@@ -299,69 +304,11 @@ export default function FruitDetailsScreen() {
     });
 
     if (!hasResults) {
-      devLog("No results found, showing empty state");
-      return (
-        <AnimatedSurface
-          style={[
-            styles.stateContainer,
-            containerAnimatedStyle,
-            { backgroundColor: theme.colors.surfaceVariant },
-          ]}
-          elevation={2}
-        >
-          <View style={styles.errorContent}>
-            <IconSymbol
-              name="magnifyingglass"
-              size={64}
-              color={theme.colors.outline}
-            />
-            <Text
-              variant="titleLarge"
-              style={{ color: theme.colors.onSurfaceVariant, marginTop: 16 }}
-            >
-              No se encontró información
-            </Text>
-            <Text
-              variant="bodyMedium"
-              style={{
-                color: theme.colors.outline,
-                textAlign: "center",
-                marginTop: 8,
-              }}
-            >
-              No se encontró información nutricional para "
-              {decodeURIComponent(fruitName || "")}" en la base de datos de
-              USDA.
-            </Text>
-            <Text
-              variant="bodySmall"
-              style={{
-                color: theme.colors.outline,
-                textAlign: "center",
-                marginTop: 16,
-              }}
-            >
-              Es posible que esta fruta no esté disponible en la base de datos o
-              tenga un nombre diferente.
-            </Text>
-            <Button
-              mode="contained"
-              onPress={handleRetry}
-              style={{ marginTop: 24 }}
-            >
-              Buscar de nuevo
-            </Button>
-          </View>
-        </AnimatedSurface>
-      );
+      devLog("No results found in renderResultsState, fallback to error state");
+      // Esto debería ser manejado por el flujo principal de searchFruitInformation
+      // Si se llega aquí, algo salió mal en la lógica anterior, así que redirigimos a error.
+      return renderErrorState();
     }
-
-    devLog("Rendering food items list", {
-      itemsCount:
-        searchResults.length > 0 && searchResults[0]?.foods
-          ? searchResults[0].foods.length
-          : 0,
-    });
 
     return (
       <View style={styles.resultsContainer}>
@@ -372,8 +319,8 @@ export default function FruitDetailsScreen() {
           ]}
           elevation={2}
         >
-          <IconSymbol
-            name="checkmark.circle.fill"
+          <MaterialCommunityIcons // Usamos MaterialCommunityIcons
+            name="check-circle" // Icono de Material para éxito
             size={32}
             color={theme.colors.onPrimaryContainer}
           />
@@ -416,6 +363,7 @@ export default function FruitDetailsScreen() {
                 styles.foodItemCard,
                 { backgroundColor: theme.colors.surface },
               ]}
+              elevation={1} // Ligeramente más bajo para un estilo más suave
             >
               <Card.Content>
                 <Text
@@ -433,10 +381,27 @@ export default function FruitDetailsScreen() {
                   </Text>
                 )}
                 <View style={styles.chipContainer}>
-                  <Chip compact mode="outlined" textStyle={{ fontSize: 12 }}>
+                  <Chip
+                    compact
+                    mode="outlined"
+                    textStyle={{
+                      fontSize: 12,
+                      color: theme.colors.onSurfaceVariant,
+                    }} // Color del texto del chip
+                    style={{ borderColor: theme.colors.outlineVariant }} // Color del borde del chip
+                  >
                     {foodItem.dataType}
                   </Chip>
-                  <Chip compact textStyle={{ fontSize: 12 }}>
+                  <Chip
+                    compact
+                    textStyle={{
+                      fontSize: 12,
+                      color: theme.colors.onSurfaceVariant,
+                    }}
+                    style={{
+                      backgroundColor: theme.colors.surfaceContainerLow,
+                    }} // Usar un color de superficie
+                  >
                     ID: {foodItem.fdcId}
                   </Chip>
                   {foodItem.score && (
@@ -445,7 +410,10 @@ export default function FruitDetailsScreen() {
                       style={{
                         backgroundColor: theme.colors.secondaryContainer,
                       }}
-                      textStyle={{ fontSize: 12 }}
+                      textStyle={{
+                        fontSize: 12,
+                        color: theme.colors.onSecondaryContainer,
+                      }}
                     >
                       Relevancia: {Math.round(foodItem.score)}%
                     </Chip>
@@ -459,6 +427,16 @@ export default function FruitDetailsScreen() {
                   loading={isLoadingFood}
                   disabled={isLoadingFood}
                   icon="arrow-right"
+                  contentStyle={{
+                    flexDirection: "row-reverse",
+                    justifyContent: "space-between",
+                    paddingHorizontal: 16,
+                  }}
+                  labelStyle={{
+                    flex: 1,
+                    textAlign: "center",
+                    marginRight: 8,
+                  }}
                 >
                   Ver Detalles Nutricionales
                 </Button>
@@ -482,7 +460,8 @@ export default function FruitDetailsScreen() {
         elevation={2}
       >
         <View style={styles.loadingContent}>
-          <ActivityIndicator size="large" color={theme.colors.secondary} />
+          <ActivityIndicator size="large" color={theme.colors.primary} />{" "}
+          {/* Cambiado a primary para consistencia */}
           <Text
             variant="titleMedium"
             style={{ color: theme.colors.onSurface, marginTop: 16 }}
@@ -499,11 +478,10 @@ export default function FruitDetailsScreen() {
           >
             Obteniendo datos nutricionales completos de la base de datos USDA
           </Text>
-
           <View style={styles.loadingSteps}>
             <View style={styles.loadingStep}>
-              <IconSymbol
-                name="server.rack"
+              <MaterialCommunityIcons // Usamos MaterialCommunityIcons
+                name="database-search" // Icono de base de datos
                 size={20}
                 color={theme.colors.primary}
               />
@@ -515,8 +493,8 @@ export default function FruitDetailsScreen() {
               </Text>
             </View>
             <View style={styles.loadingStep}>
-              <IconSymbol
-                name="doc.text"
+              <MaterialCommunityIcons // Usamos MaterialCommunityIcons
+                name="download" // Icono de descarga
                 size={20}
                 color={theme.colors.primary}
               />
@@ -528,8 +506,8 @@ export default function FruitDetailsScreen() {
               </Text>
             </View>
             <View style={styles.loadingStep}>
-              <IconSymbol
-                name="chart.bar"
+              <MaterialCommunityIcons // Usamos MaterialCommunityIcons
+                name="chart-bar" // Icono de gráfico
                 size={20}
                 color={theme.colors.primary}
               />
@@ -549,7 +527,8 @@ export default function FruitDetailsScreen() {
   const renderCompletedState = () => {
     if (!currentFood) {
       devError("renderCompletedState called but currentFood is null");
-      return null;
+      // Fallback a un estado de error si no hay datos a pesar de estar "completado"
+      return renderErrorState();
     }
 
     devLog("Rendering completed state", {
@@ -563,25 +542,25 @@ export default function FruitDetailsScreen() {
         <Surface
           style={[
             styles.successHeader,
-            { backgroundColor: theme.colors.primaryContainer },
+            { backgroundColor: theme.colors.tertiaryContainer }, // Usamos tertiaryContainer para el éxito
           ]}
           elevation={2}
         >
-          <IconSymbol
-            name="checkmark.circle.fill"
+          <MaterialCommunityIcons // Usamos MaterialCommunityIcons
+            name="food-apple" // Icono de manzana para éxito final
             size={32}
-            color={theme.colors.onPrimaryContainer}
+            color={theme.colors.onTertiaryContainer}
           />
           <View style={styles.successHeaderText}>
             <Text
               variant="titleMedium"
-              style={{ color: theme.colors.onPrimaryContainer }}
+              style={{ color: theme.colors.onTertiaryContainer }}
             >
-              Información cargada exitosamente
+              ¡Información cargada exitosamente!
             </Text>
             <Text
               variant="bodySmall"
-              style={{ color: theme.colors.onPrimaryContainer }}
+              style={{ color: theme.colors.onTertiaryContainer }}
             >
               Datos completos de USDA Food Database
             </Text>
@@ -594,15 +573,13 @@ export default function FruitDetailsScreen() {
   };
 
   const renderErrorState = () => {
-    const errorMessage =
-      searchError ||
-      foodError ||
-      "Ocurrió un error inesperado al conectar con la base de datos";
+    const displayErrorMessage =
+      "Ocurrió un error inesperado al conectar con la base de datos.";
 
     devLog("Rendering error state", {
       searchError,
       foodError,
-      finalErrorMessage: errorMessage,
+      displayErrorMessage,
     });
 
     return (
@@ -615,8 +592,8 @@ export default function FruitDetailsScreen() {
         elevation={2}
       >
         <View style={styles.errorContent}>
-          <IconSymbol
-            name="exclamationmark.triangle.fill"
+          <MaterialCommunityIcons // Usamos MaterialCommunityIcons
+            name="alert-octagon" // Icono de octágono de alerta
             size={64}
             color={theme.colors.onErrorContainer}
           />
@@ -634,7 +611,7 @@ export default function FruitDetailsScreen() {
               marginTop: 8,
             }}
           >
-            {errorMessage}
+            {displayErrorMessage}
           </Text>
 
           <View style={styles.errorDetails}>
@@ -643,6 +620,8 @@ export default function FruitDetailsScreen() {
               style={{
                 color: theme.colors.onErrorContainer,
                 textAlign: "center",
+                fontWeight: "bold", // Resaltar posibles causas
+                marginBottom: 4,
               }}
             >
               Posibles causas:
@@ -651,19 +630,19 @@ export default function FruitDetailsScreen() {
               variant="bodySmall"
               style={{ color: theme.colors.onErrorContainer }}
             >
-              • Problemas de conectividad
+              • Problemas de conectividad a internet
             </Text>
             <Text
               variant="bodySmall"
               style={{ color: theme.colors.onErrorContainer }}
             >
-              • Servicio temporalmente no disponible
+              • Servicio USDA temporalmente no disponible
             </Text>
             <Text
               variant="bodySmall"
               style={{ color: theme.colors.onErrorContainer }}
             >
-              • Límite de consultas excedido
+              • Nombre de fruta no reconocido o límites de consultas
             </Text>
           </View>
 
@@ -695,7 +674,9 @@ export default function FruitDetailsScreen() {
       case "error":
         return renderErrorState();
       default:
-        devError("Unknown search stage", { searchStage });
+        devError("Unknown search stage, falling back to searching", {
+          searchStage,
+        });
         return renderSearchingState();
     }
   };
@@ -729,7 +710,7 @@ export default function FruitDetailsScreen() {
       searchStage,
       isSearching,
       isLoadingFood,
-      hasSearchResults: !!searchResults?.length,
+      hasSearchResults: !!searchResults?.[0]?.foods?.length, // Verificar si hay foods dentro del primer searchResult
       hasCurrentFood: !!currentFood,
       hasSearchError: !!searchError,
       hasFoodError: !!foodError,
@@ -759,9 +740,9 @@ export default function FruitDetailsScreen() {
           title: decodedFruitName,
           headerShown: true,
           headerStyle: {
-            backgroundColor: theme.colors.surface,
+            backgroundColor: theme.colors.surface, // Fondo del AppBar
           },
-          headerTintColor: theme.colors.onSurface,
+          headerTintColor: theme.colors.onSurface, // Color de los íconos y texto del AppBar
           headerTitleStyle: {
             fontWeight: "600",
           },
@@ -776,7 +757,11 @@ export default function FruitDetailsScreen() {
               icon="refresh"
               onPress={handleRefreshPress}
               disabled={isSearching || isLoadingFood}
-              iconColor={theme.colors.onSurface}
+              iconColor={
+                isSearching || isLoadingFood
+                  ? theme.colors.onSurfaceDisabled // Color para deshabilitado
+                  : theme.colors.onSurface
+              }
             />
           ),
           presentation: "card",
@@ -795,7 +780,7 @@ export default function FruitDetailsScreen() {
             styles.fruitHeader,
             { backgroundColor: theme.colors.primaryContainer },
           ]}
-          elevation={2}
+          elevation={theme.dark ? 1 : 3} // Un poco más de elevación para el header destacado
         >
           <View style={styles.fruitHeaderContent}>
             <Text
@@ -805,7 +790,13 @@ export default function FruitDetailsScreen() {
                 { color: theme.colors.onPrimaryContainer },
               ]}
             >
-              🍎 {decodedFruitName}
+              {/* Usamos un icono de MaterialCommunityIcons para el encabezado */}
+              <MaterialCommunityIcons
+                name="food-apple-outline" // Un icono de fruta genérico para el título
+                size={36}
+                color={theme.colors.onPrimaryContainer}
+              />{" "}
+              {decodedFruitName}
             </Text>
             <Text
               variant="bodyMedium"
@@ -834,6 +825,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 32,
+    // Eliminar alignItems: 'center' aquí si las tarjetas deben ocupar todo el ancho
   },
 
   // Fruit header styles
@@ -841,16 +833,22 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 16,
-    borderRadius: 16,
+    borderRadius: 20, // Bordes más redondeados
+    padding: 16, // Reducir padding general
   },
   fruitHeaderContent: {
-    padding: 20,
+    paddingVertical: 4, // Ajustar el padding vertical interno
+    paddingHorizontal: 12, // Ajustar el padding horizontal interno
     alignItems: "center",
   },
   fruitTitle: {
     textAlign: "center",
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: 8, // Ajustar margen
+    flexDirection: "row", // Para alinear el icono con el texto
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8, // Espacio entre icono y texto
   },
   fruitSubtitle: {
     textAlign: "center",
@@ -858,10 +856,11 @@ const styles = StyleSheet.create({
 
   // State container styles
   stateContainer: {
-    borderRadius: 16,
+    borderRadius: 20, // Más redondeado
     padding: 32,
     alignItems: "center",
-    margin: 16,
+    marginHorizontal: 16, // Usar marginHorizontal para centrar
+    marginVertical: 16, // Añadir margen vertical
   },
 
   // Loading content styles
@@ -872,7 +871,8 @@ const styles = StyleSheet.create({
   loadingSteps: {
     marginTop: 24,
     gap: 12,
-    alignSelf: "flex-start",
+    alignSelf: "flex-start", // Alineado a la izquierda dentro del contenedor
+    paddingHorizontal: 16, // Añadir padding para que los pasos no toquen los bordes
   },
   loadingStep: {
     flexDirection: "row",
@@ -886,8 +886,9 @@ const styles = StyleSheet.create({
   },
   errorDetails: {
     marginTop: 16,
-    alignItems: "center",
+    alignItems: "flex-start", // Alineado a la izquierda para las viñetas
     gap: 4,
+    width: "80%", // Limitar ancho para legibilidad
   },
 
   // Results container styles
@@ -898,8 +899,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderRadius: 12,
-    margin: 16,
+    borderRadius: 20, // Más redondeado
+    marginHorizontal: 16, // Consistencia de margen
+    marginBottom: 16, // Más espacio abajo
   },
   resultsHeaderText: {
     marginLeft: 12,
@@ -909,8 +911,8 @@ const styles = StyleSheet.create({
   // Food item card styles
   foodItemCard: {
     marginBottom: 12,
-    marginHorizontal: 16,
-    borderRadius: 12,
+    marginHorizontal: 16, // Consistencia de margen
+    borderRadius: 16, // Más redondeado
   },
   chipContainer: {
     flexDirection: "row",
@@ -927,8 +929,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderRadius: 12,
-    margin: 16,
+    borderRadius: 20, // Más redondeado
+    marginHorizontal: 16, // Consistencia de margen
+    marginBottom: 16,
   },
   successHeaderText: {
     marginLeft: 12,

@@ -47,7 +47,8 @@ export default function FavoritesScreen() {
 
   const handleRefresh = async () => {
     await loadFavorites();
-    showMessage("Favoritos actualizados 💖");
+    // Mensaje de Snackbar ahora más descriptivo y con ícono
+    showMessage("Favoritos actualizados ✔️");
   };
 
   const handleFruitPress = (fruit: Fruit) => {
@@ -118,69 +119,91 @@ export default function FavoritesScreen() {
 
   const renderHeader = () => (
     <Surface
+      // Usar primaryContainer para un encabezado más vibrante y Material 3
       style={[
         styles.header,
-        { backgroundColor: theme.colors.tertiaryContainer },
+        {
+          backgroundColor: theme.colors.primaryContainer,
+          borderBottomLeftRadius: 36, // Bordes más curvados
+          borderBottomRightRadius: 36, // Bordes más curvados
+        },
       ]}
-      elevation={3}
+      elevation={4} // Mayor elevación para distinguirlo
     >
+      {/* IconSymbol ya está bien para Material 3 */}
       <IconSymbol
-        size={60}
-        color={theme.colors.onTertiaryContainer}
+        size={72} // Un poco más grande para impactar
+        color={theme.colors.onPrimaryContainer} // Color acorde al contenedor
         name="heart.fill"
         style={styles.headerIcon}
       />
       <Text
-        variant="headlineLarge"
-        style={[styles.title, { color: theme.colors.onTertiaryContainer }]}
+        variant="headlineLarge" // Título principal más grande
+        style={[styles.title, { color: theme.colors.onPrimaryContainer }]}
       >
         Mis Favoritos
       </Text>
       <Text
-        variant="bodyMedium"
-        style={[styles.subtitle, { color: theme.colors.onTertiaryContainer }]}
+        variant="bodyLarge" // Subtítulo más legible
+        style={[
+          styles.subtitle,
+          { color: theme.colors.onPrimaryContainer, opacity: 0.8 },
+        ]}
       >
-        Tus frutas favoritas guardadas para acceso rápido
+        Aquí encontrarás todas las frutas que has marcado como favoritas.
       </Text>
 
       {stats && (
         <Surface
           style={[
             styles.statsContainer,
-            { backgroundColor: theme.colors.surface },
+            {
+              backgroundColor: theme.colors.surfaceContainerHigh, // Contenedor de estadísticas más elevado
+              borderRadius: 24, // Bordes más suaves
+              paddingVertical: 18, // Más padding vertical
+            },
           ]}
           elevation={2}
         >
           <View style={styles.statItem}>
             <Text
-              variant="titleMedium"
+              variant="titleLarge" // Números de estadísticas más grandes y audaces
               style={{ color: theme.colors.primary, fontWeight: "bold" }}
             >
               {stats.totalFavorites}
             </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
-              Favoritos
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.onSurface }}
+            >
+              Total
             </Text>
           </View>
           <View style={styles.statItem}>
             <Text
-              variant="titleMedium"
+              variant="titleLarge"
               style={{ color: theme.colors.secondary, fontWeight: "bold" }}
             >
               {stats.averageCalories}
             </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.onSurface }}
+            >
               Cal. promedio
             </Text>
           </View>
           <View style={styles.statItem}>
             <Text
-              variant="titleMedium"
+              variant="titleLarge"
               style={{ color: theme.colors.tertiary, fontWeight: "bold" }}
             >
               {stats.mostRecent?.name || "N/A"}
             </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.onSurface }}
+            >
               Más reciente
             </Text>
           </View>
@@ -191,17 +214,33 @@ export default function FavoritesScreen() {
 
   const renderSearchSection = () => (
     <Surface
-      style={[styles.searchSection, { backgroundColor: theme.colors.surface }]}
-      elevation={1}
+      // Usar surfaceContainerHighest para la sección de búsqueda que es "flotante"
+      style={[
+        styles.searchSection,
+        {
+          backgroundColor: theme.colors.surfaceContainerHighest, // Color más prominente para la barra de búsqueda
+          borderRadius: 28, // Bordes más suaves y modernos
+          marginHorizontal: 16, // Márgenes laterales para que "flote"
+          marginTop: -32, // Para superponerla ligeramente sobre el header
+          paddingVertical: 12, // Más padding
+          paddingHorizontal: 16, // Más padding
+          zIndex: 1, // Asegurar que esté por encima de otros elementos
+        },
+      ]}
+      elevation={3} // Una buena elevación para el elemento flotante
     >
       <View style={styles.searchContainer}>
         <Searchbar
           placeholder="Buscar en favoritos..."
           onChangeText={setSearchQuery}
           value={searchQuery}
+          mode="view" // Usar el nuevo modo 'view' para Material 3
           style={[
             styles.searchbar,
-            { backgroundColor: theme.colors.surfaceVariant },
+            {
+              backgroundColor: theme.colors.surfaceContainerHigh, // Color de fondo más claro
+              borderRadius: 16, // Bordes más suaves para la searchbar
+            },
           ]}
           inputStyle={{ color: theme.colors.onSurface }}
           iconColor={theme.colors.onSurfaceVariant}
@@ -215,33 +254,42 @@ export default function FavoritesScreen() {
           onDismiss={() => setShowMenu(false)}
           anchor={
             <Button
-              mode="outlined"
+              mode="outlined" // outlined es bueno para acciones secundarias
               onPress={() => setShowMenu(true)}
               icon="sort"
-              compact
               style={styles.sortButton}
+              textColor={theme.colors.primary} // Color del texto del botón
+              compact // Hacer el botón más compacto
             >
               Ordenar
             </Button>
           }
+          // Estilo del menú para Material 3
+          contentStyle={{
+            backgroundColor: theme.colors.surfaceContainerHigh,
+            borderRadius: 16,
+          }}
         >
           <Menu.Item
             onPress={() => handleSort("dateAdded")}
             title="Por fecha"
-            leadingIcon="calendar"
+            leadingIcon="calendar-outline" // Ícono de Material Design
             trailingIcon={sortBy === "dateAdded" ? "check" : undefined}
+            titleStyle={{ color: theme.colors.onSurface }}
           />
           <Menu.Item
             onPress={() => handleSort("name")}
             title="Por nombre"
-            leadingIcon="alphabetical"
+            leadingIcon="alphabetical-variant" // Ícono de Material Design
             trailingIcon={sortBy === "name" ? "check" : undefined}
+            titleStyle={{ color: theme.colors.onSurface }}
           />
           <Menu.Item
             onPress={() => handleSort("calories")}
             title="Por calorías"
-            leadingIcon="fire"
+            leadingIcon="fire" // Ícono de Material Design
             trailingIcon={sortBy === "calories" ? "check" : undefined}
+            titleStyle={{ color: theme.colors.onSurface }}
           />
         </Menu>
 
@@ -249,10 +297,10 @@ export default function FavoritesScreen() {
           <Button
             mode="text"
             onPress={handleClearAll}
-            icon="delete"
-            compact
+            icon="delete-empty-outline" // Ícono de Material Design
             textColor={theme.colors.error}
             style={styles.clearButton}
+            compact // Hacer el botón más compacto
           >
             Limpiar todo
           </Button>
@@ -266,48 +314,53 @@ export default function FavoritesScreen() {
       <Surface
         style={[
           styles.emptyCard,
-          { backgroundColor: theme.colors.surfaceVariant },
+          {
+            backgroundColor: theme.colors.surfaceContainerHigh, // Usa surfaceContainerHigh
+            borderRadius: 28, // Más redondeado
+          },
         ]}
-        elevation={1}
+        elevation={2} // Elevación para el estado vacío
       >
         <IconSymbol
-          name="heart.slash"
-          size={80}
+          name="heart.slash" // Ícono ya está bien
+          size={96} // Un poco más grande
           color={theme.colors.onSurfaceVariant}
           style={styles.emptyIcon}
         />
         <Text
-          variant="headlineSmall"
+          variant="headlineMedium" // Título más impactante
           style={[styles.emptyTitle, { color: theme.colors.onSurfaceVariant }]}
         >
-          {searchQuery ? "Sin resultados" : "Sin favoritos aún"}
+          {searchQuery ? "Sin resultados" : "Aún no hay favoritos"}
         </Text>
         <Text
-          variant="bodyMedium"
+          variant="bodyLarge" // Mensaje más legible
           style={[
             styles.emptyMessage,
-            { color: theme.colors.onSurfaceVariant },
+            { color: theme.colors.onSurfaceVariant, opacity: 0.7 },
           ]}
         >
           {searchQuery
-            ? `No se encontraron favoritos para "${searchQuery}"`
-            : "Explora frutas y marca tus favoritas tocando el corazón"}
+            ? `No se encontraron frutas favoritas que coincidan con "${searchQuery}".`
+            : "Explora frutas y márcalas como favoritas para guardarlas aquí."}
         </Text>
 
         <View style={styles.emptyActions}>
           {searchQuery ? (
             <Button
-              mode="outlined"
+              mode="contained-tonal" // Botón tonal para Material 3
               onPress={() => setSearchQuery("")}
-              icon="close"
+              icon="close-circle-outline" // Ícono de Material Design
+              style={{ borderRadius: 20 }}
             >
               Limpiar búsqueda
             </Button>
           ) : (
             <Button
-              mode="contained"
+              mode="contained" // Contained para la acción principal
               onPress={() => router.push("/(tabs)/explore")}
-              icon="compass"
+              icon="compass-outline" // Ícono de Material Design
+              style={{ borderRadius: 20 }}
             >
               Explorar frutas
             </Button>
@@ -328,50 +381,78 @@ export default function FavoritesScreen() {
       <View style={styles.favoritesContainer}>
         <View style={styles.favoritesHeader}>
           <Text
-            variant="titleMedium"
+            variant="titleLarge" // Título de sección más grande
             style={[
               styles.favoritesTitle,
-              { color: theme.colors.onBackground },
+              { color: theme.colors.onBackground, marginBottom: 8 },
             ]}
           >
-            💖 {searchQuery ? "Resultados" : "Tus favoritos"} (
+            <IconButton
+              icon="heart-multiple-outline"
+              size={24}
+              iconColor={theme.colors.primary}
+              style={{ margin: 0 }}
+            />{" "}
+            {/* Ícono */}
+            {searchQuery ? "Resultados" : "Tus Favoritos"} (
             {filteredFavorites.length})
           </Text>
           {searchQuery && (
-            <Text
-              variant="bodySmall"
+            <Chip
+              icon="magnify" // Ícono de Material Design
+              compact
               style={[
-                styles.searchInfo,
-                { color: theme.colors.onSurfaceVariant },
+                styles.searchInfoChip,
+                { backgroundColor: theme.colors.surfaceVariant },
               ]}
+              textStyle={{ color: theme.colors.onSurfaceVariant }}
             >
               Buscando: "{searchQuery}"
-            </Text>
+            </Chip>
           )}
         </View>
 
         {filteredFavorites.map((fruit, index) => (
-          <View key={fruit.id} style={styles.favoriteItem}>
+          <Surface
+            key={fruit.id}
+            style={[
+              styles.favoriteItem,
+              {
+                backgroundColor: theme.colors.surfaceContainerLow, // Fondo para cada ítem
+                borderRadius: 20, // Bordes más suaves
+                padding: 12, // Más padding interno
+              },
+            ]}
+            elevation={1} // Pequeña elevación
+          >
             <FruitCard fruit={fruit} onPress={handleFruitPress} index={index} />
             <View style={styles.favoriteActions}>
               <Chip
-                icon="calendar"
+                icon="calendar-month-outline" // Ícono de Material Design
                 compact
-                style={styles.dateChip}
-                textStyle={{ fontSize: 11 }}
+                style={[
+                  styles.dateChip,
+                  { backgroundColor: theme.colors.surfaceVariant },
+                ]}
+                textStyle={{
+                  fontSize: 12,
+                  color: theme.colors.onSurfaceVariant,
+                }} // Tamaño de fuente y color ajustados
               >
                 {fruit.dateAdded
                   ? new Date(fruit.dateAdded).toLocaleDateString()
                   : "N/A"}
               </Chip>
               <IconButton
-                icon="heart-remove"
-                size={20}
+                icon="heart-off-outline" // Ícono de Material Design para eliminar favorito
+                size={24} // Un poco más grande
                 iconColor={theme.colors.error}
                 onPress={() => handleRemoveFavorite(fruit)}
+                containerColor={theme.colors.errorContainer} // Nuevo color de contenedor para IconButton
+                style={{ borderRadius: 24 }} // Botón circular
               />
             </View>
-          </View>
+          </Surface>
         ))}
       </View>
     );
@@ -393,21 +474,23 @@ export default function FavoritesScreen() {
           />
         }
         contentContainerStyle={styles.scrollContent}
-        stickyHeaderIndices={[1]}
+        // stickyHeaderIndices={[1]} // Desactivar stickyHeader para permitir el efecto de superposición
       >
         {renderHeader()}
-        {renderSearchSection()}
+        {renderSearchSection()}{" "}
+        {/* Renderizar la barra de búsqueda después del header */}
         {renderContent()}
-
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
       {favorites.length > 0 && (
         <FAB
-          icon="heart-plus"
+          icon="plus" // Un ícono más estándar para FAB de añadir
           style={[styles.fab, { backgroundColor: theme.colors.tertiary }]}
           onPress={() => router.push("/(tabs)/explore")}
           label="Agregar más"
+          // Usar el nuevo modo 'extended' para Material 3 FAB
+          variant="secondary" // secondary para FAB de adición
         />
       )}
 
@@ -415,10 +498,16 @@ export default function FavoritesScreen() {
         visible={showSnackbar}
         onDismiss={() => setShowSnackbar(false)}
         duration={3000}
-        style={{ backgroundColor: theme.colors.inverseSurface }}
+        // Estilos de Snackbar para Material 3
+        style={{
+          backgroundColor: theme.colors.inverseSurface,
+          borderRadius: 8,
+          marginBottom: 16,
+        }}
         action={{
-          label: "OK",
+          label: "Cerrar", // Texto de acción más claro
           onPress: () => setShowSnackbar(false),
+          textColor: theme.colors.inversePrimary,
         }}
       >
         <Text style={{ color: theme.colors.inverseOnSurface }}>
@@ -440,11 +529,10 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
     padding: 24,
-    marginBottom: 8,
+    // marginBottom: 8, // Se elimina, el searchSection se superpone
     alignItems: "center",
+    // Bordes y elevación en línea
   },
   headerIcon: {
     marginBottom: 12,
@@ -461,99 +549,122 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: "row",
-    borderRadius: 16,
-    padding: 16,
+    // borderRadius, padding, etc. en línea
     marginTop: 8,
-    width: "100%",
+    width: "90%", // Ajustar el ancho para que "flote" mejor
     justifyContent: "space-around",
   },
   statItem: {
     alignItems: "center",
+    flex: 1, // Para distribuir uniformemente
   },
   searchSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 8,
+    // paddingHorizontal, paddingVertical, etc. en línea
+    marginBottom: 16, // Espacio después de la sección de búsqueda
+    // border radius, margin, elevation, zIndex en línea
   },
   searchContainer: {
     marginBottom: 12,
   },
   searchbar: {
-    elevation: 0,
-    borderRadius: 12,
+    elevation: 0, // La elevación del Surface padre es suficiente
+    // borderRadius en línea
   },
   controlsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 8, // Pequeño padding interno
   },
   sortButton: {
     borderRadius: 20,
+    height: 40, // Altura fija para botones compactos
   },
   clearButton: {
     borderRadius: 20,
+    height: 40,
   },
   favoritesContainer: {
     paddingHorizontal: 16,
+    paddingTop: 16, // Espacio superior para el contenido principal
   },
   favoritesHeader: {
-    marginBottom: 8,
+    marginBottom: 16, // Más espacio después del encabezado de la lista
+    flexDirection: "row", // Para el ícono y el texto
+    alignItems: "center",
   },
   favoritesTitle: {
     fontWeight: "bold",
-    fontSize: 18,
-    marginBottom: 4,
+    // fontSize en línea
+    // marginBottom en línea
   },
   searchInfo: {
+    // Este estilo ya no se usa con el Chip
     fontStyle: "italic",
   },
+  searchInfoChip: {
+    // Nuevo estilo para el Chip de búsqueda
+    marginTop: 8,
+    alignSelf: "flex-start", // Para que el chip no ocupe todo el ancho
+  },
   favoriteItem: {
-    marginBottom: 8,
+    marginBottom: 12, // Más espacio entre cada tarjeta de fruta
+    // padding y borderRadius en línea
   },
   favoriteActions: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 4, // Padding más ajustado
     paddingTop: 8,
   },
   dateChip: {
-    height: 28,
+    height: 32, // Altura ligeramente mayor para el chip
+    // font size y background color en línea
+    // textStyle en línea
   },
   emptyContainer: {
     flex: 1,
-    padding: 16,
+    padding: 24, // Más padding
+    justifyContent: "center", // Centrar verticalmente el contenido
+    alignItems: "center",
+    minHeight: 400, // Asegurar que tenga un tamaño mínimo
   },
   emptyCard: {
     padding: 32,
-    borderRadius: 16,
     alignItems: "center",
+    width: "100%", // Ancho completo dentro del padding del contenedor
+    maxWidth: 400, // Limitar ancho para pantallas grandes
   },
   emptyIcon: {
-    marginBottom: 16,
+    marginBottom: 20, // Más espacio
   },
   emptyTitle: {
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 12,
     textAlign: "center",
   },
   emptyMessage: {
     textAlign: "center",
     marginBottom: 24,
-    lineHeight: 20,
+    lineHeight: 22, // Mayor altura de línea para mejor legibilidad
   },
   emptyActions: {
     flexDirection: "row",
     gap: 12,
+    flexWrap: "wrap", // Asegurar que los botones se envuelvan si no caben
+    justifyContent: "center",
   },
   bottomSpacing: {
-    height: 80,
+    height: 80, // Más espacio al final para el FAB
   },
   fab: {
     position: "absolute",
-    margin: 16,
+    margin: 24, // Mayor margen para el FAB
     right: 0,
     bottom: 0,
-    borderRadius: 28,
+    borderRadius: 28, // Mayor radio para Material 3 FAB
+    height: 56, // Altura estándar de FAB extendido
+    // color y variant en línea
   },
 });

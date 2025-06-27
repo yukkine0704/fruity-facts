@@ -1,9 +1,10 @@
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUserStore } from "@/stores/userStore";
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, View } from "react-native";
 import {
+  ActivityIndicator,
   Avatar,
   Button,
   Card,
@@ -37,50 +38,54 @@ export default function ProfileScreen() {
   const [showNameDialog, setShowNameDialog] = useState(false);
   const [showThemeDialog, setShowThemeDialog] = useState(false);
   const [tempName, setTempName] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   const { user, updateUserName, getUserStats, clearUserData, exportUserData } =
     useUserStore();
 
-  const stats = getUserStats();
+  const stats = useMemo(() => getUserStats(), [getUserStats, user]);
 
-  const showMessage = (message: string) => {
+  const showMessage = useCallback((message: string) => {
     setSnackbarMessage(message);
     setShowSnackbar(true);
-  };
+  }, []);
 
-  const handleThemePress = () => {
+  const handleThemePress = useCallback(() => {
     setShowThemeDialog(true);
-  };
+  }, []);
 
-  const handleQuickThemeToggle = () => {
+  const handleQuickThemeToggle = useCallback(() => {
     cycleTheme();
     showMessage(`Tema cambiado a: ${getThemeDisplayName}`);
-  };
+  }, [cycleTheme, showMessage, getThemeDisplayName]);
 
-  const handleNameChange = () => {
+  const handleNameChange = useCallback(() => {
     setTempName(user?.name || "");
     setShowNameDialog(true);
-  };
+  }, [user?.name]);
 
-  const handleSaveName = () => {
+  const handleSaveName = useCallback(() => {
     if (tempName.trim()) {
       updateUserName(tempName.trim());
       showMessage("Nombre actualizado");
     }
     setShowNameDialog(false);
-  };
+  }, [tempName, updateUserName, showMessage]);
 
-  const handleExportData = async () => {
+  const handleExportData = useCallback(async () => {
+    setIsExporting(true);
     try {
       const data = await exportUserData();
       showMessage("Datos exportados exitosamente");
-      // Aquí podrías implementar compartir el archivo
     } catch (error) {
+      console.error("Error al exportar datos:", error);
       showMessage("Error al exportar datos");
+    } finally {
+      setIsExporting(false);
     }
-  };
+  }, [exportUserData, showMessage]);
 
-  const handleClearData = () => {
+  const handleClearData = useCallback(() => {
     Alert.alert(
       "Limpiar datos",
       "¿Estás seguro de que quieres eliminar todos tus datos? Esta acción no se puede deshacer.",
@@ -96,46 +101,57 @@ export default function ProfileScreen() {
         },
       ]
     );
-  };
+  }, [clearUserData, showMessage]);
 
-  const handleOpenGitHub = () => {
-    Linking.openURL("https://github.com/yukkine0704/fruity-facts");
-  };
+  const handleOpenGitHub = useCallback(() => {
+    Linking.openURL("https://github.com/yukkine0704/fruity-facts").catch(
+      (err) => console.error("No se pudo abrir GitHub:", err)
+    );
+  }, []);
 
-  const handleOpenUSDA = () => {
-    Linking.openURL("https://fdc.nal.usda.gov/");
-  };
+  const handleOpenUSDA = useCallback(() => {
+    Linking.openURL("https://fdc.nal.usda.gov/").catch((err) =>
+      console.error("No se pudo abrir USDA:", err)
+    );
+  }, []);
 
-  const handleSendFeedback = () => {
+  const handleSendFeedback = useCallback(() => {
     Linking.openURL(
       "mailto:lubbok0704@gmail.com?subject=Fruity Facts Feedback"
-    );
-  };
+    ).catch((err) => console.error("No se pudo abrir el correo:", err));
+  }, []);
+
+  // --- Componentes renderizados como funciones para una mejor organización ---
 
   const renderHeader = () => (
     <Surface
       style={[
         styles.header,
-        { backgroundColor: theme.colors.secondaryContainer },
+        {
+          backgroundColor: theme.colors.primaryContainer,
+          borderBottomLeftRadius: 36,
+          borderBottomRightRadius: 36,
+        },
       ]}
-      elevation={3}
+      elevation={4}
     >
       <Avatar.Icon
-        size={80}
-        icon="account"
+        size={96}
+        icon="account-circle-outline"
         style={[styles.avatar, { backgroundColor: theme.colors.secondary }]}
+        color={theme.colors.onSecondary}
       />
       <Text
-        variant="headlineMedium"
-        style={[styles.userName, { color: theme.colors.onSecondaryContainer }]}
+        variant="headlineLarge"
+        style={[styles.userName, { color: theme.colors.onPrimaryContainer }]}
       >
         {user?.name || "Usuario"}
       </Text>
       <Text
-        variant="bodyMedium"
+        variant="bodyLarge"
         style={[
           styles.userSubtitle,
-          { color: theme.colors.onSecondaryContainer },
+          { color: theme.colors.onPrimaryContainer, opacity: 0.7 },
         ]}
       >
         Miembro desde{" "}
@@ -144,21 +160,21 @@ export default function ProfileScreen() {
 
       <Chip
         icon={getThemeIcon}
-        style={[styles.themeChip, { backgroundColor: theme.colors.surface }]}
+        style={[
+          styles.themeChip,
+          { backgroundColor: theme.colors.surfaceVariant },
+        ]}
+        textStyle={{ color: theme.colors.onSurfaceVariant }}
         children={getThemeDisplayName}
         compact
         disabled
       />
 
       <Button
-        mode="outlined"
+        mode="contained-tonal"
         onPress={handleNameChange}
         icon="pencil"
-        style={[
-          styles.editButton,
-          { borderColor: theme.colors.onSecondaryContainer },
-        ]}
-        labelStyle={{ color: theme.colors.onSecondaryContainer }}
+        style={styles.editButton}
       >
         Editar perfil
       </Button>
@@ -166,60 +182,78 @@ export default function ProfileScreen() {
   );
 
   const renderStats = () => (
-    <Card style={[styles.statsCard, { backgroundColor: theme.colors.surface }]}>
+    <Card
+      style={[
+        styles.statsCard,
+        { backgroundColor: theme.colors.surfaceContainerHigh },
+      ]}
+    >
       <Card.Content>
         <Text
-          variant="titleMedium"
+          variant="titleLarge"
           style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
         >
-          📊 Estadísticas
+          <List.Icon icon="chart-bar" style={styles.sectionIcon} />
+          Estadísticas {/* Ícono */}
         </Text>
 
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Text
-              variant="titleLarge"
+              variant="displaySmall"
               style={{ color: theme.colors.primary, fontWeight: "bold" }}
             >
               {stats.totalFruitsViewed}
             </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.onSurfaceVariant }}
+            >
               Frutas vistas
             </Text>
           </View>
 
           <View style={styles.statItem}>
             <Text
-              variant="titleLarge"
+              variant="displaySmall"
               style={{ color: theme.colors.secondary, fontWeight: "bold" }}
             >
               {stats.totalFavorites}
             </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.onSurfaceVariant }}
+            >
               Favoritos
             </Text>
           </View>
 
           <View style={styles.statItem}>
             <Text
-              variant="titleLarge"
+              variant="displaySmall"
               style={{ color: theme.colors.tertiary, fontWeight: "bold" }}
             >
               {stats.totalSearches}
             </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.onSurfaceVariant }}
+            >
               Búsquedas
             </Text>
           </View>
 
           <View style={styles.statItem}>
             <Text
-              variant="titleLarge"
+              variant="displaySmall"
               style={{ color: theme.colors.primary, fontWeight: "bold" }}
             >
               {stats.daysActive}
             </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.onSurfaceVariant }}
+            >
               Días activo
             </Text>
           </View>
@@ -230,17 +264,20 @@ export default function ProfileScreen() {
 
   const renderSettings = () => (
     <Card
-      style={[styles.settingsCard, { backgroundColor: theme.colors.surface }]}
+      style={[
+        styles.settingsCard,
+        { backgroundColor: theme.colors.surfaceContainerHigh },
+      ]}
     >
       <Card.Content>
         <Text
-          variant="titleMedium"
+          variant="titleLarge"
           style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
         >
-          ⚙️ Configuración
+          <List.Icon icon="cog" style={styles.sectionIcon} /> Configuración{" "}
+          {/* Ícono */}
         </Text>
 
-        {/* Configuración de tema mejorada */}
         <List.Item
           title="Apariencia"
           description={`Tema actual: ${getThemeDisplayName}${
@@ -252,7 +289,7 @@ export default function ProfileScreen() {
           right={(props) => (
             <View style={styles.themeControls}>
               <Button
-                mode="outlined"
+                mode="contained-tonal"
                 compact
                 onPress={handleQuickThemeToggle}
                 style={styles.quickToggleButton}
@@ -265,11 +302,21 @@ export default function ProfileScreen() {
           onPress={handleThemePress}
           style={[
             styles.settingItem,
-            { backgroundColor: theme.colors.surfaceVariant },
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
           ]}
+          titleStyle={{ paddingVertical: 4 }}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
 
-        <Divider style={{ marginVertical: 8 }} />
+        <Divider
+          style={{
+            marginVertical: 8,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
 
         <List.Item
           title="Notificaciones"
@@ -282,9 +329,23 @@ export default function ProfileScreen() {
               color={theme.colors.primary}
             />
           )}
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
+          ]}
+          titleStyle={{ paddingVertical: 4 }}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
 
-        <Divider style={{ marginVertical: 8 }} />
+        <Divider
+          style={{
+            marginVertical: 8,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
 
         <List.Item
           title="Búsqueda automática"
@@ -297,9 +358,23 @@ export default function ProfileScreen() {
               color={theme.colors.primary}
             />
           )}
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
+          ]}
+          titleStyle={{ paddingVertical: 4 }}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
 
-        <Divider style={{ marginVertical: 8 }} />
+        <Divider
+          style={{
+            marginVertical: 8,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
 
         <List.Item
           title="Animaciones"
@@ -312,19 +387,34 @@ export default function ProfileScreen() {
               color={theme.colors.primary}
             />
           )}
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
+          ]}
+          titleStyle={{ paddingVertical: 4 }}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
       </Card.Content>
     </Card>
   );
 
   const renderDataSection = () => (
-    <Card style={[styles.dataCard, { backgroundColor: theme.colors.surface }]}>
+    <Card
+      style={[
+        styles.dataCard,
+        { backgroundColor: theme.colors.surfaceContainerHigh },
+      ]}
+    >
       <Card.Content>
         <Text
-          variant="titleMedium"
+          variant="titleLarge"
           style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
         >
-          💾 Datos
+          <List.Icon icon="database" style={styles.sectionIcon} /> Datos{" "}
+          {/* Ícono */}
         </Text>
 
         <List.Item
@@ -332,29 +422,59 @@ export default function ProfileScreen() {
           description="Descargar todos tus datos"
           left={(props) => <List.Icon {...props} icon="download" />}
           onPress={handleExportData}
+          right={() => isExporting && <ActivityIndicator size="small" />}
+          disabled={isExporting}
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
+          ]}
+          titleStyle={{ paddingVertical: 4 }}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
 
-        <Divider style={{ marginVertical: 8 }} />
+        <Divider
+          style={{
+            marginVertical: 8,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
 
         <List.Item
           title="Limpiar datos"
           description="Eliminar todos los datos guardados"
           left={(props) => <List.Icon {...props} icon="delete" />}
-          titleStyle={{ color: theme.colors.error }}
+          titleStyle={{ color: theme.colors.error, paddingVertical: 4 }}
           onPress={handleClearData}
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
+          ]}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
       </Card.Content>
     </Card>
   );
 
   const renderAboutSection = () => (
-    <Card style={[styles.aboutCard, { backgroundColor: theme.colors.surface }]}>
+    <Card
+      style={[
+        styles.aboutCard,
+        { backgroundColor: theme.colors.surfaceContainerHigh },
+      ]}
+    >
       <Card.Content>
         <Text
-          variant="titleMedium"
+          variant="titleLarge"
           style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
         >
-          ℹ️ Acerca de
+          <List.Icon icon="information" style={styles.sectionIcon} /> Acerca de{" "}
+          {/* Ícono */}
         </Text>
 
         <List.Item
@@ -362,32 +482,83 @@ export default function ProfileScreen() {
           description="Ver el proyecto en GitHub"
           left={(props) => <List.Icon {...props} icon="github" />}
           onPress={handleOpenGitHub}
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
+          ]}
+          titleStyle={{ paddingVertical: 4 }}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
 
-        <Divider style={{ marginVertical: 8 }} />
+        <Divider
+          style={{
+            marginVertical: 8,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
 
         <List.Item
           title="Base de datos USDA"
           description="Fuente de datos nutricionales"
           left={(props) => <List.Icon {...props} icon="database" />}
           onPress={handleOpenUSDA}
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
+          ]}
+          titleStyle={{ paddingVertical: 4 }}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
 
-        <Divider style={{ marginVertical: 8 }} />
+        <Divider
+          style={{
+            marginVertical: 8,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
 
         <List.Item
           title="Enviar feedback"
           description="Comparte tu opinión"
           left={(props) => <List.Icon {...props} icon="email" />}
           onPress={handleSendFeedback}
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
+          ]}
+          titleStyle={{ paddingVertical: 4 }}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
 
-        <Divider style={{ marginVertical: 8 }} />
+        <Divider
+          style={{
+            marginVertical: 8,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
 
         <List.Item
           title="Versión"
           description="1.0.0"
           left={(props) => <List.Icon {...props} icon="information" />}
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: theme.colors.surfaceContainerLow,
+              borderRadius: 12,
+            },
+          ]}
+          titleStyle={{ paddingVertical: 4 }}
+          descriptionStyle={{ paddingBottom: 4 }}
         />
       </Card.Content>
     </Card>
@@ -416,8 +587,14 @@ export default function ProfileScreen() {
         <Dialog
           visible={showNameDialog}
           onDismiss={() => setShowNameDialog(false)}
+          style={{
+            backgroundColor: theme.colors.surfaceContainerHigh,
+            borderRadius: 28,
+          }}
         >
-          <Dialog.Title>Cambiar nombre</Dialog.Title>
+          <Dialog.Title style={{ color: theme.colors.onSurface }}>
+            Cambiar nombre
+          </Dialog.Title>
           <Dialog.Content>
             <TextInput
               label="Nombre"
@@ -425,11 +602,19 @@ export default function ProfileScreen() {
               onChangeText={setTempName}
               mode="outlined"
               autoFocus
+              theme={{ colors: { primary: theme.colors.primary } }}
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setShowNameDialog(false)}>Cancelar</Button>
-            <Button onPress={handleSaveName}>Guardar</Button>
+            <Button
+              onPress={() => setShowNameDialog(false)}
+              textColor={theme.colors.primary}
+            >
+              Cancelar
+            </Button>
+            <Button onPress={handleSaveName} textColor={theme.colors.primary}>
+              Guardar
+            </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -444,10 +629,14 @@ export default function ProfileScreen() {
         visible={showSnackbar}
         onDismiss={() => setShowSnackbar(false)}
         duration={3000}
-        style={{ backgroundColor: theme.colors.inverseSurface }}
+        style={{
+          backgroundColor: theme.colors.inverseSurface,
+          borderRadius: 8,
+        }}
         action={{
           label: "OK",
           onPress: () => setShowSnackbar(false),
+          textColor: theme.colors.inversePrimary,
         }}
       >
         <Text style={{ color: theme.colors.inverseOnSurface }}>
@@ -469,67 +658,78 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
     padding: 24,
-    marginBottom: 16,
+    marginBottom: 24,
     alignItems: "center",
   },
   avatar: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   userName: {
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: 8,
   },
   userSubtitle: {
-    marginBottom: 12,
-    opacity: 0.8,
-  },
-  themeChip: {
     marginBottom: 16,
   },
+  themeChip: {
+    marginBottom: 20,
+  },
   editButton: {
-    borderRadius: 20,
+    borderRadius: 28,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
   },
   statsCard: {
     marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 16,
+    marginBottom: 24,
+    borderRadius: 28,
+    paddingVertical: 8,
   },
   settingsCard: {
     marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 16,
+    marginBottom: 24,
+    borderRadius: 28,
+    paddingVertical: 8,
   },
   dataCard: {
     marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 16,
+    marginBottom: 24,
+    borderRadius: 28,
+    paddingVertical: 8,
   },
   aboutCard: {
     marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 16,
+    marginBottom: 24,
+    borderRadius: 28,
+    paddingVertical: 8,
   },
   sectionTitle: {
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: 20,
+    marginLeft: 8,
+    flexDirection: "row", // Para alinear el ícono y el texto en la misma línea
+    alignItems: "center", // Centrar verticalmente
+  },
+  sectionIcon: {
+    marginRight: 8, // Espacio entre el ícono y el texto
+    width: 24, // Asegurar que el ícono tenga un ancho fijo
+    height: 24, // Asegurar que el ícono tenga una altura fija
   },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
     gap: 16,
   },
   statItem: {
     alignItems: "center",
-    flex: 1,
-    minWidth: "45%",
+    flexBasis: "48%",
+    paddingVertical: 8,
   },
   settingItem: {
-    borderRadius: 8,
-    marginVertical: 2,
+    marginVertical: 4,
+    paddingVertical: 4,
   },
   themeControls: {
     flexDirection: "row",
@@ -537,9 +737,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quickToggleButton: {
-    borderRadius: 16,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 2,
   },
   bottomSpacing: {
-    height: 32,
+    height: 48,
   },
 });

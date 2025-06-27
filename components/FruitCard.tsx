@@ -1,6 +1,6 @@
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Fruit } from "@/types/fruit";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { Card, Chip, Surface, Text } from "react-native-paper";
@@ -41,38 +41,40 @@ export const FruitCard: React.FC<FruitCardProps> = ({
 
   useEffect(() => {
     // Animación de entrada escalonada
-    const delay = index * 100;
+    const delay = index * 120;
 
     scale.value = withDelay(
       delay,
       withSpring(1, {
         damping: 15,
         stiffness: 100,
+        mass: 0.8,
       })
     );
 
-    opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
+    opacity.value = withDelay(delay, withTiming(1, { duration: 700 }));
 
     translateY.value = withDelay(
       delay,
       withSpring(0, {
         damping: 12,
         stiffness: 80,
+        mass: 0.8,
       })
     );
 
     // Pequeña rotación inicial
     rotation.value = withDelay(
-      delay + 200,
+      delay + 250,
       withSequence(
-        withTiming(2, { duration: 200 }),
-        withTiming(0, { duration: 200 })
+        withTiming(2, { duration: 250 }),
+        withTiming(0, { duration: 250 })
       )
     );
   }, [index]);
 
   const handlePressIn = () => {
-    pressScale.value = withSpring(0.95, {
+    pressScale.value = withSpring(0.96, {
       damping: 15,
       stiffness: 200,
     });
@@ -86,9 +88,8 @@ export const FruitCard: React.FC<FruitCardProps> = ({
   };
 
   const handlePress = () => {
-    // Animación de feedback
     pressScale.value = withSequence(
-      withTiming(0.9, { duration: 100 }),
+      withTiming(0.98, { duration: 100 }),
       withSpring(1, { damping: 10, stiffness: 150 })
     );
 
@@ -110,41 +111,21 @@ export const FruitCard: React.FC<FruitCardProps> = ({
   });
 
   const nutritionItemAnimatedStyle = useAnimatedStyle(() => {
-    const scaleValue = interpolate(pressScale.value, [0.95, 1], [0.9, 1]);
+    const scaleValue = interpolate(pressScale.value, [0.96, 1], [0.95, 1]);
 
     return {
       transform: [{ scale: scaleValue }],
     };
   });
 
-  const getFruitEmoji = (name: string): string => {
-    const fruitEmojis: { [key: string]: string } = {
-      apple: "🍎",
-      banana: "🍌",
-      orange: "🍊",
-      strawberry: "🍓",
-      grape: "🍇",
-      watermelon: "🍉",
-      pineapple: "🍍",
-      peach: "🍑",
-      lemon: "🍋",
-      lime: "🟢",
-      cherry: "🍒",
-      pear: "🍐",
-      kiwi: "🥝",
-      mango: "🥭",
-      coconut: "🥥",
-      avocado: "🥑",
-    };
-
-    const fruitKey = name.toLowerCase();
-    return fruitEmojis[fruitKey] || "🍎";
+  const getFruitIcon = (): keyof typeof MaterialCommunityIcons.glyphMap => {
+    return "fruit-watermelon";
   };
 
   const getCalorieColor = (calories: number) => {
     if (calories < 50) return theme.colors.tertiary;
     if (calories < 80) return theme.colors.primary;
-    return theme.colors.secondary;
+    return theme.colors.error;
   };
 
   return (
@@ -155,19 +136,27 @@ export const FruitCard: React.FC<FruitCardProps> = ({
       style={cardAnimatedStyle}
     >
       <AnimatedCard
-        style={[styles.card, { backgroundColor: theme.colors.surface }]}
-        elevation={2}
+        style={[
+          styles.card,
+          { backgroundColor: theme.colors.surfaceContainerLow },
+        ]}
+        elevation={theme.dark ? 1 : 2}
       >
         <Card.Content style={styles.content}>
-          {/* Header con emoji y nombre */}
+          {/* Header con icono y nombre */}
           <AnimatedSurface
             style={[
               styles.header,
               { backgroundColor: theme.colors.primaryContainer },
             ]}
-            elevation={1}
+            elevation={theme.dark ? 0 : 1}
           >
-            <Text style={styles.emoji}>{getFruitEmoji(fruit.name)}</Text>
+            <MaterialCommunityIcons
+              name={getFruitIcon()} // Ya no pasamos fruit.name
+              size={36}
+              color={theme.colors.onPrimaryContainer}
+              style={styles.fruitIcon}
+            />
             <Text
               variant="titleLarge"
               style={[
@@ -183,12 +172,12 @@ export const FruitCard: React.FC<FruitCardProps> = ({
           <Surface
             style={[
               styles.taxonomySection,
-              { backgroundColor: theme.colors.surfaceVariant },
+              { backgroundColor: theme.colors.surfaceContainerHigh },
             ]}
-            elevation={0}
+            elevation={theme.dark ? 0 : 1}
           >
             <Text
-              variant="bodySmall"
+              variant="labelLarge"
               style={[
                 styles.sectionTitle,
                 { color: theme.colors.onSurfaceVariant },
@@ -217,10 +206,10 @@ export const FruitCard: React.FC<FruitCardProps> = ({
               styles.nutritionSection,
               { backgroundColor: theme.colors.secondaryContainer },
             ]}
-            elevation={1}
+            elevation={theme.dark ? 0 : 1}
           >
             <Text
-              variant="bodySmall"
+              variant="labelLarge"
               style={[
                 styles.sectionTitle,
                 { color: theme.colors.onSecondaryContainer },
@@ -232,6 +221,7 @@ export const FruitCard: React.FC<FruitCardProps> = ({
             <Animated.View
               style={[styles.nutritionGrid, nutritionItemAnimatedStyle]}
             >
+              {/* Calorías */}
               <Surface
                 style={[
                   styles.nutritionItem,
@@ -239,30 +229,43 @@ export const FruitCard: React.FC<FruitCardProps> = ({
                     backgroundColor: getCalorieColor(fruit.nutritions.calories),
                   },
                 ]}
-                elevation={1}
+                elevation={theme.dark ? 0 : 1}
               >
-                <IconSymbol
-                  name="flame"
+                <MaterialCommunityIcons
+                  name="fire"
                   size={16}
-                  color={theme.colors.onPrimary}
+                  color={
+                    getCalorieColor(fruit.nutritions.calories) ===
+                    theme.colors.error
+                      ? theme.colors.onError
+                      : theme.colors.onPrimary
+                  }
                 />
                 <Text
                   variant="labelSmall"
-                  style={{ color: theme.colors.onPrimary, fontWeight: "bold" }}
+                  style={{
+                    color:
+                      getCalorieColor(fruit.nutritions.calories) ===
+                      theme.colors.error
+                        ? theme.colors.onError
+                        : theme.colors.onPrimary,
+                    fontWeight: "bold",
+                  }}
                 >
                   {fruit.nutritions.calories} cal
                 </Text>
               </Surface>
 
+              {/* Carbohidratos */}
               <Surface
                 style={[
                   styles.nutritionItem,
                   { backgroundColor: theme.colors.tertiary },
                 ]}
-                elevation={1}
+                elevation={theme.dark ? 0 : 1}
               >
-                <IconSymbol
-                  name="cube.box"
+                <MaterialCommunityIcons
+                  name="grain"
                   size={16}
                   color={theme.colors.onTertiary}
                 />
@@ -274,41 +277,46 @@ export const FruitCard: React.FC<FruitCardProps> = ({
                 </Text>
               </Surface>
 
+              {/* Azúcar */}
               <Surface
                 style={[
                   styles.nutritionItem,
-                  { backgroundColor: theme.colors.error },
+                  { backgroundColor: theme.colors.surfaceVariant },
                 ]}
-                elevation={1}
+                elevation={theme.dark ? 0 : 1}
               >
-                <IconSymbol
-                  name="heart"
+                <MaterialCommunityIcons
+                  name="candy"
                   size={16}
-                  color={theme.colors.onError}
+                  color={theme.colors.onSurfaceVariant}
                 />
                 <Text
                   variant="labelSmall"
-                  style={{ color: theme.colors.onError, fontWeight: "bold" }}
+                  style={{
+                    color: theme.colors.onSurfaceVariant,
+                    fontWeight: "bold",
+                  }}
                 >
                   {fruit.nutritions.sugar}g azúcar
                 </Text>
               </Surface>
 
+              {/* Proteína */}
               <Surface
                 style={[
                   styles.nutritionItem,
-                  { backgroundColor: theme.colors.outline },
+                  { backgroundColor: theme.colors.primary },
                 ]}
-                elevation={1}
+                elevation={theme.dark ? 0 : 1}
               >
-                <IconSymbol
-                  name="dumbbell"
+                <MaterialCommunityIcons
+                  name="weight-lifter"
                   size={16}
-                  color={theme.colors.surface}
+                  color={theme.colors.onPrimary}
                 />
                 <Text
                   variant="labelSmall"
-                  style={{ color: theme.colors.surface, fontWeight: "bold" }}
+                  style={{ color: theme.colors.onPrimary, fontWeight: "bold" }}
                 >
                   {fruit.nutritions.protein}g prot
                 </Text>
@@ -323,6 +331,13 @@ export const FruitCard: React.FC<FruitCardProps> = ({
               { backgroundColor: theme.colors.tertiaryContainer },
             ]}
             textStyle={{ color: theme.colors.onTertiaryContainer }}
+            icon={() => (
+              <MaterialCommunityIcons
+                name="identifier"
+                size={16}
+                color={theme.colors.onTertiaryContainer}
+              />
+            )}
           >
             ID: {fruit.id}
           </Chip>
@@ -336,20 +351,22 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: 16,
     marginVertical: 8,
-    borderRadius: 16,
+    borderRadius: 20,
+    overflow: "hidden",
   },
   content: {
-    padding: 16,
+    padding: 0,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginBottom: 16,
   },
-  emoji: {
-    fontSize: 32,
+  fruitIcon: {
     marginRight: 12,
   },
   fruitName: {
@@ -357,35 +374,48 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   taxonomySection: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   nutritionSection: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 12,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   nutritionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+    justifyContent: "space-between",
   },
   nutritionItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 16,
-    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+    flexGrow: 1,
+    justifyContent: "center",
+    minWidth: "48%",
   },
   idChip: {
-    alignSelf: "flex-start",
+    alignSelf: "flex-end",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    paddingHorizontal: 4,
+    height: 32,
   },
 });
