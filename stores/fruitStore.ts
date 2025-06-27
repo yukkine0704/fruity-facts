@@ -4,6 +4,11 @@ import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import fruitService from "../services/fruitService";
 import { Fruit, FruitSearchParams, NutritionStats } from "../types/fruit";
 
+interface CacheData {
+  timestamp: number;
+  data: any;
+}
+
 interface FruitState {
   // Estados
   fruits: Fruit[];
@@ -13,24 +18,47 @@ interface FruitState {
   error: string | null;
   searchParams: FruitSearchParams;
 
+  // Cache timestamps
+  fruitsCache: CacheData | null;
+  nutritionStatsCache: CacheData | null;
+  fruitByNameCache: Record<string, CacheData>;
+  fruitsByFamilyCache: Record<string, CacheData>;
+  fruitsByGenusCache: Record<string, CacheData>;
+
   // Acciones
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
 
   // Acciones de frutas
-  fetchAllFruits: () => Promise<void>;
-  fetchFruitByName: (name: string) => Promise<void>;
-  fetchFruitsByFamily: (family: string) => Promise<void>;
-  fetchFruitsByGenus: (genus: string) => Promise<void>;
+  fetchAllFruits: (forceRefresh?: boolean) => Promise<void>;
+  fetchFruitByName: (name: string, forceRefresh?: boolean) => Promise<void>;
+  fetchFruitsByFamily: (
+    family: string,
+    forceRefresh?: boolean
+  ) => Promise<void>;
+  fetchFruitsByGenus: (genus: string, forceRefresh?: boolean) => Promise<void>;
   searchFruits: (params: FruitSearchParams) => Promise<void>;
-  fetchNutritionStats: () => Promise<void>;
+  fetchNutritionStats: (forceRefresh?: boolean) => Promise<void>;
 
   // Utilidades
   resetStore: () => void;
   clearCurrentFruit: () => void;
   updateSearchParams: (params: Partial<FruitSearchParams>) => void;
+  clearCache: () => void;
 }
+
+const CACHE_DURATION = 10 * 60 * 60 * 1000; // 10 horas en milisegundos
+
+const isCacheValid = (cacheData: CacheData | null): boolean => {
+  if (!cacheData) return false;
+  return Date.now() - cacheData.timestamp < CACHE_DURATION;
+};
+
+const createCacheData = (data: any): CacheData => ({
+  timestamp: Date.now(),
+  data,
+});
 
 const initialState = {
   fruits: [],
@@ -39,6 +67,11 @@ const initialState = {
   isLoading: false,
   error: null,
   searchParams: {},
+  fruitsCache: null,
+  nutritionStatsCache: null,
+  fruitByNameCache: {},
+  fruitsByFamilyCache: {},
+  fruitsByGenusCache: {},
 };
 
 export const useFruitStore = create<FruitState>()(
@@ -53,15 +86,27 @@ export const useFruitStore = create<FruitState>()(
         clearError: () => set({ error: null }),
 
         // Fetch todas las frutas
-        fetchAllFruits: async () => {
-          const { setLoading, setError } = get();
+        fetchAllFruits: async (forceRefresh = false) => {
+          const { setLoading, setError, fruitsCache } = get();
+
+          // Verificar cache si no es refresh forzado
+          if (!forceRefresh && isCacheValid(fruitsCache)) {
+            set({ fruits: fruitsCache!.data });
+            return;
+          }
 
           try {
             setLoading(true);
             setError(null);
 
             const fruits = await fruitService.getAllFruits();
-            set({ fruits, isLoading: false });
+            const cacheData = createCacheData(fruits);
+
+            set({
+              fruits,
+              fruitsCache: cacheData,
+              isLoading: false,
+            });
           } catch (error: any) {
             setError(error.message || "Error fetching fruits");
             set({ isLoading: false });
@@ -69,15 +114,30 @@ export const useFruitStore = create<FruitState>()(
         },
 
         // Fetch fruta por nombre
-        fetchFruitByName: async (name: string) => {
-          const { setLoading, setError } = get();
+        fetchFruitByName: async (name: string, forceRefresh = false) => {
+          const { setLoading, setError, fruitByNameCache } = get();
+
+          // Verificar cache si no es refresh forzado
+          if (!forceRefresh && isCacheValid(fruitByNameCache[name])) {
+            set({ currentFruit: fruitByNameCache[name].data });
+            return;
+          }
 
           try {
             setLoading(true);
             setError(null);
 
             const fruit = await fruitService.getFruitByName(name);
-            set({ currentFruit: fruit, isLoading: false });
+            const cacheData = createCacheData(fruit);
+
+            set({
+              currentFruit: fruit,
+              fruitByNameCache: {
+                ...fruitByNameCache,
+                [name]: cacheData,
+              },
+              isLoading: false,
+            });
           } catch (error: any) {
             setError(error.message || `Error fetching fruit: ${name}`);
             set({ isLoading: false });
@@ -85,15 +145,30 @@ export const useFruitStore = create<FruitState>()(
         },
 
         // Fetch frutas por familia
-        fetchFruitsByFamily: async (family: string) => {
-          const { setLoading, setError } = get();
+        fetchFruitsByFamily: async (family: string, forceRefresh = false) => {
+          const { setLoading, setError, fruitsByFamilyCache } = get();
+
+          // Verificar cache si no es refresh forzado
+          if (!forceRefresh && isCacheValid(fruitsByFamilyCache[family])) {
+            set({ fruits: fruitsByFamilyCache[family].data });
+            return;
+          }
 
           try {
             setLoading(true);
             setError(null);
 
             const fruits = await fruitService.getFruitsByFamily(family);
-            set({ fruits, isLoading: false });
+            const cacheData = createCacheData(fruits);
+
+            set({
+              fruits,
+              fruitsByFamilyCache: {
+                ...fruitsByFamilyCache,
+                [family]: cacheData,
+              },
+              isLoading: false,
+            });
           } catch (error: any) {
             setError(
               error.message || `Error fetching fruits by family: ${family}`
@@ -103,15 +178,30 @@ export const useFruitStore = create<FruitState>()(
         },
 
         // Fetch frutas por género
-        fetchFruitsByGenus: async (genus: string) => {
-          const { setLoading, setError } = get();
+        fetchFruitsByGenus: async (genus: string, forceRefresh = false) => {
+          const { setLoading, setError, fruitsByGenusCache } = get();
+
+          // Verificar cache si no es refresh forzado
+          if (!forceRefresh && isCacheValid(fruitsByGenusCache[genus])) {
+            set({ fruits: fruitsByGenusCache[genus].data });
+            return;
+          }
 
           try {
             setLoading(true);
             setError(null);
 
             const fruits = await fruitService.getFruitsByGenus(genus);
-            set({ fruits, isLoading: false });
+            const cacheData = createCacheData(fruits);
+
+            set({
+              fruits,
+              fruitsByGenusCache: {
+                ...fruitsByGenusCache,
+                [genus]: cacheData,
+              },
+              isLoading: false,
+            });
           } catch (error: any) {
             setError(
               error.message || `Error fetching fruits by genus: ${genus}`
@@ -120,7 +210,7 @@ export const useFruitStore = create<FruitState>()(
           }
         },
 
-        // Buscar frutas
+        // Buscar frutas (siempre hace la petición)
         searchFruits: async (params: FruitSearchParams) => {
           const { setLoading, setError } = get();
 
@@ -141,15 +231,27 @@ export const useFruitStore = create<FruitState>()(
         },
 
         // Fetch estadísticas nutricionales
-        fetchNutritionStats: async () => {
-          const { setLoading, setError } = get();
+        fetchNutritionStats: async (forceRefresh = false) => {
+          const { setLoading, setError, nutritionStatsCache } = get();
+
+          // Verificar cache si no es refresh forzado
+          if (!forceRefresh && isCacheValid(nutritionStatsCache)) {
+            set({ nutritionStats: nutritionStatsCache!.data });
+            return;
+          }
 
           try {
             setLoading(true);
             setError(null);
 
             const stats = await fruitService.getNutritionStats();
-            set({ nutritionStats: stats, isLoading: false });
+            const cacheData = createCacheData(stats);
+
+            set({
+              nutritionStats: stats,
+              nutritionStatsCache: cacheData,
+              isLoading: false,
+            });
           } catch (error: any) {
             setError(error.message || "Error fetching nutrition stats");
             set({ isLoading: false });
@@ -163,15 +265,28 @@ export const useFruitStore = create<FruitState>()(
           set((state) => ({
             searchParams: { ...state.searchParams, ...params },
           })),
+        clearCache: () =>
+          set({
+            fruitsCache: null,
+            nutritionStatsCache: null,
+            fruitByNameCache: {},
+            fruitsByFamilyCache: {},
+            fruitsByGenusCache: {},
+          }),
       }),
       {
         name: "fruit-store",
         storage: createJSONStorage(() => AsyncStorage),
-        // Solo persistir ciertos campos
+        // Persistir datos y cache
         partialize: (state) => ({
           fruits: state.fruits,
           nutritionStats: state.nutritionStats,
           searchParams: state.searchParams,
+          fruitsCache: state.fruitsCache,
+          nutritionStatsCache: state.nutritionStatsCache,
+          fruitByNameCache: state.fruitByNameCache,
+          fruitsByFamilyCache: state.fruitsByFamilyCache,
+          fruitsByGenusCache: state.fruitsByGenusCache,
         }),
       }
     ),

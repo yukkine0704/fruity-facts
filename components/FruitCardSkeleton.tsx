@@ -128,7 +128,7 @@ export const FruitCardSkeleton: React.FC<FruitCardSkeletonProps> = ({
           ]}
           elevation={theme.dark ? 0 : 1} // Coincide con la elevación del header de FruitCard
         >
-          <SkeletonBox width={40} height={40} borderRadius={20} />{" "}
+          <SkeletonBox width={40} height={40} borderRadius={20} />
           {/* Círculo para el icono */}
           <SkeletonBox
             width="70%"
@@ -176,9 +176,6 @@ export const FruitCardSkeleton: React.FC<FruitCardSkeletonProps> = ({
             style={{ marginBottom: 12 }} // Más espacio debajo del título
           />
           <View style={styles.nutritionGrid}>
-            {" "}
-            {/* Usamos View para los children */}
-            {/* Los ítems de nutrición ahora tienen un ancho más flexible */}
             <SkeletonBox
               width={"48%"} // Aproximadamente la mitad, menos el gap
               height={28}

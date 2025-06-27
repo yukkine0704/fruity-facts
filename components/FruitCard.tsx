@@ -189,7 +189,7 @@ export const FruitCard: React.FC<FruitCardProps> = ({
               variant="bodyMedium"
               style={{ color: theme.colors.onSurfaceVariant }}
             >
-              <Text style={{ fontWeight: "bold" }}>Familia:</Text>{" "}
+              <Text style={{ fontWeight: "bold" }}>Familia:</Text>
               {fruit.family}
             </Text>
             <Text

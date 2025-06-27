@@ -160,7 +160,7 @@ export default function HomeScreen() {
               variant="titleLarge" // Cambiado a titleLarge
               style={{ color: theme.colors.secondary, marginBottom: 16 }}
             >
-              <MaterialCommunityIcons name="star-four-points" size={24} />{" "}
+              <MaterialCommunityIcons name="star-four-points" size={24} />
               Características
             </Text>
 
@@ -370,10 +370,10 @@ export default function HomeScreen() {
               variant="bodyMedium"
               style={{ color: theme.colors.onSurface }}
             >
-              Edita{" "}
+              Edita
               <Text style={{ fontWeight: "bold", color: theme.colors.primary }}>
                 app/(tabs)/index.tsx
-              </Text>{" "}
+              </Text>
               para ver los cambios en tiempo real.
             </Text>
             <Chip

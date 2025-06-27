@@ -392,8 +392,7 @@ export default function FavoritesScreen() {
               size={24}
               iconColor={theme.colors.primary}
               style={{ margin: 0 }}
-            />{" "}
-            {/* Ícono */}
+            />
             {searchQuery ? "Resultados" : "Tus Favoritos"} (
             {filteredFavorites.length})
           </Text>
@@ -476,8 +475,7 @@ export default function FavoritesScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {renderHeader()}
-        {renderSearchSection()}{" "}
-        {/* Renderizar la barra de búsqueda después del header */}
+        {renderSearchSection()}
         {renderContent()}
         <View style={styles.bottomSpacing} />
       </ScrollView>

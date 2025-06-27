@@ -154,7 +154,7 @@ export default function ProfileScreen() {
           { color: theme.colors.onPrimaryContainer, opacity: 0.7 },
         ]}
       >
-        Miembro desde{" "}
+        Miembro desde
         {user?.joinDate ? new Date(user.joinDate).toLocaleDateString() : "hoy"}
       </Text>
 
@@ -274,8 +274,7 @@ export default function ProfileScreen() {
           variant="titleLarge"
           style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
         >
-          <List.Icon icon="cog" style={styles.sectionIcon} /> Configuración{" "}
-          {/* Ícono */}
+          <List.Icon icon="cog" style={styles.sectionIcon} /> Configuración
         </Text>
 
         <List.Item
@@ -413,7 +412,7 @@ export default function ProfileScreen() {
           variant="titleLarge"
           style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
         >
-          <List.Icon icon="database" style={styles.sectionIcon} /> Datos{" "}
+          <List.Icon icon="database" style={styles.sectionIcon} /> Datos
           {/* Ícono */}
         </Text>
 
@@ -473,7 +472,7 @@ export default function ProfileScreen() {
           variant="titleLarge"
           style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
         >
-          <List.Icon icon="information" style={styles.sectionIcon} /> Acerca de{" "}
+          <List.Icon icon="information" style={styles.sectionIcon} /> Acerca de
           {/* Ícono */}
         </Text>
 

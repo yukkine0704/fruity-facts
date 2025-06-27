@@ -278,7 +278,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
               variant="bodyLarge"
               style={{ color: theme.colors.onPrimaryContainer }}
             >
-              Tamaño de porción: {String(food.servingSize)}{" "}
+              Tamaño de porción: {String(food.servingSize)}
               {String(food.servingSizeUnit || "g")}
             </Text>
           </View>
@@ -354,7 +354,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
                 />
               )}
             </AnimatedView>
-          ))}{" "}
+          ))}
         </AnimatedSurface>
       )}
 
@@ -443,7 +443,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
               variant="bodyLarge"
               style={{ color: theme.colors.onSurfaceVariant, marginLeft: 12 }}
             >
-              Fecha de publicación:{" "}
+              Fecha de publicación:
               {new Date(food.publicationDate).toLocaleDateString("es-ES", {
                 year: "numeric",
                 month: "long",

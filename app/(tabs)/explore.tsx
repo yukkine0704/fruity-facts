@@ -498,7 +498,7 @@ export default function ExploreScreen() {
             variant="titleMedium"
             style={[styles.fruitsTitle, { color: theme.colors.onBackground }]}
           >
-            <MaterialCommunityIcons name="food-apple" size={20} />{" "}
+            <MaterialCommunityIcons name="food-apple" size={20} />
             {searchQuery ? "Resultados" : "Todas las frutas"} (
             {filteredFruits.length})
           </Text>
@@ -763,19 +763,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, // Más padding horizontal
   },
 
-  // FAB and spacing
   bottomSpacing: {
-    height: 90, // Un poco más de espacio para el FAB con etiqueta
+    height: 90,
   },
   fab: {
     position: "absolute",
-    margin: 20, // Margen consistente con Material 3
+    margin: 20,
     right: 0,
-    bottom: 0,
-    borderRadius: 16, // FAB puede tener bordes menos redondeados en Material 3 Expressive
-    // Opcional: si quieres un FAB extendido con texto
-    // width: 140,
-    // justifyContent: 'flex-start',
-    // paddingHorizontal: 20,
+    bottom: 50,
+    borderRadius: 16,
   },
 });

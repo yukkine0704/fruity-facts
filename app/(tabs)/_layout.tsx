@@ -1,6 +1,6 @@
 import { useTheme } from "@/contexts/ThemeContext";
 import React from "react";
-import { Platform, Pressable, StatusBar, StyleSheet, View } from "react-native";
+import { Pressable, StatusBar, StyleSheet, View } from "react-native";
 import { BottomNavigation, IconButton, Text } from "react-native-paper";
 import Animated, {
   useAnimatedStyle,
@@ -98,8 +98,15 @@ export default function TabLayout() {
 
   const CustomTabBar = () => {
     return (
-      <Animated.View style={[styles.dockContainer, dockAnimatedStyle]}>
-        <View style={[styles.dock, { backgroundColor: theme.colors.surface }]}>
+      <Animated.View
+        style={[
+          styles.dockContainer,
+          dockAnimatedStyle,
+          // Eliminamos estilos de transparencia aquí si estaban directamente en dockContainer
+        ]}
+      >
+        {/* Usamos un View simple con el fondo sólido */}
+        <View style={styles.solidDock}>
           {routes.map((route, tabIndex) => {
             const isActive = index === tabIndex;
             const tabScale = useSharedValue(1);
@@ -167,68 +174,73 @@ export default function TabLayout() {
     );
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.colors.background, // Fondo dinámico
-    },
-    content: {
-      flex: 1,
-      backgroundColor: theme.colors.background, // Asegurar fondo consistente
-      paddingBottom: 100, // Espacio para el dock
-    },
-    dockContainer: {
-      position: "absolute",
-      bottom: insets.bottom + 16,
-      left: 16,
-      right: 16,
-      alignItems: "center",
-    },
-    dock: {
-      flexDirection: "row",
-      paddingHorizontal: 8,
-      paddingVertical: 12,
-      borderRadius: 28,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: {
-        width: 0,
-        height: 12,
-      },
-      shadowOpacity: 0.2,
-      shadowRadius: 20,
-      elevation: 16,
-      borderWidth: 1,
-      borderColor: theme.colors.outline + "15",
-      backgroundColor: theme.colors.surface,
-      ...Platform.select({
-        ios: {
-          backdropFilter: "blur(20px)",
+  const styles = React.useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: theme.colors.background,
+        },
+        content: {
+          flex: 1,
+          backgroundColor: theme.colors.background,
+          paddingBottom: 100,
+        },
+        dockContainer: {
+          position: "absolute",
+          bottom: insets.bottom + 16,
+          left: 16,
+          right: 16,
+          alignItems: "center",
+          // Sombra de "glow" se aplica a dockContainer
+          shadowColor: theme.colors.primary, // Color del glow, puedes cambiarlo
+          shadowOffset: {
+            width: 0,
+            height: 8,
+          },
+          shadowOpacity: 0.4, // Opacidad del glow
+          shadowRadius: 15, // Difuminado del glow
+          elevation: 10, // Elevación para Android
+        },
+        solidDock: {
+          // <-- Nuevo estilo para el fondo sólido
+          flexDirection: "row",
+          paddingHorizontal: 8,
+          paddingVertical: 12,
+          borderRadius: 28,
+          borderWidth: 1,
+          borderColor: theme.colors.outline + "15", // Borde sutil
+          backgroundColor: theme.colors.surface, // Fondo sólido
+          overflow: "hidden", // Asegura que el borderRadius funcione
+          flex: 1, // Asegura que ocupe todo el espacio en dockContainer
+        },
+        tabItem: {
+          flex: 1,
+          alignItems: "center",
+          paddingVertical: 8,
+          paddingHorizontal: 4,
+        },
+        tabIconContainer: {
+          borderRadius: 20,
+          padding: 4,
         },
       }),
-    },
-    tabItem: {
-      flex: 1,
-      alignItems: "center",
-      paddingVertical: 8,
-      paddingHorizontal: 4,
-    },
-    tabIconContainer: {
-      borderRadius: 20,
-      padding: 4,
-    },
-  });
+    [theme, insets]
+  );
 
   return (
     <View style={styles.container}>
       <StatusBar
         barStyle={theme.dark ? "light-content" : "dark-content"}
-        backgroundColor={theme.colors.background}
+        backgroundColor={theme.colors.background} // StatusBar con el color de fondo de tu tema
+        translucent={false} // No translúcida para que no se superponga el contenido
       />
       <View style={styles.content}>
         <BottomNavigation
           navigationState={{ index, routes }}
           onIndexChange={setIndex}
           renderScene={renderScene}
+          // Asegúrate de que el BottomNavigation no tenga un estilo de barra que lo opaque si no lo deseas
           barStyle={{ display: "none" }}
         />
       </View>

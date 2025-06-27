@@ -460,7 +460,7 @@ export default function FruitDetailsScreen() {
         elevation={2}
       >
         <View style={styles.loadingContent}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />{" "}
+          <ActivityIndicator size="large" color={theme.colors.primary} />
           {/* Cambiado a primary para consistencia */}
           <Text
             variant="titleMedium"
@@ -795,7 +795,7 @@ export default function FruitDetailsScreen() {
                 name="food-apple-outline" // Un icono de fruta genérico para el título
                 size={36}
                 color={theme.colors.onPrimaryContainer}
-              />{" "}
+              />
               {decodedFruitName}
             </Text>
             <Text
