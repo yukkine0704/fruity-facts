@@ -54,7 +54,9 @@ export default function FruitDetailsScreen() {
 
   const {
     search,
-    searchResults,
+    searchFruit, // Usar esta función en lugar de search
+    hasResults, // Usar esta utilidad
+    currentFoods, // Usar esta utilidad
     isLoading: isSearching,
     error: searchError,
     clearSearchResults,
@@ -101,14 +103,13 @@ export default function FruitDetailsScreen() {
   }, [searchStage, searchProgress, currentStep, currentSearchTerm]);
 
   useEffect(() => {
-    if (searchResults) {
+    if (currentFoods.length > 0) {
       devLog("Search results updated", {
-        resultsCount: searchResults.length,
-        firstResultFoods: searchResults[0]?.foods?.length || 0,
-        totalHits: searchResults[0]?.totalHits,
+        resultsCount: currentFoods.length,
+        firstResult: currentFoods[0]?.description?.substring(0, 50) + "...",
       });
     }
-  }, [searchResults]);
+  }, [currentFoods]);
 
   useEffect(() => {
     if (currentFood) {
@@ -135,7 +136,7 @@ export default function FruitDetailsScreen() {
   const searchFruitInformation = async (fruitNameParam: string) => {
     if (!fruitNameParam) {
       devError("searchFruitInformation called without fruitName");
-      setSearchStage("error"); // Asegurar que el estado de error se activa
+      setSearchStage("error");
       return;
     }
 
@@ -174,51 +175,40 @@ export default function FruitDetailsScreen() {
           progress: ((i + 1) / searchTerms.length) * 100,
         });
 
-        const searchParams = {
-          dataType: ["Foundation", "Branded"] as ("Foundation" | "Branded")[],
+        // Usar la función search del hook directamente
+        await search(term, {
+          dataType: ["Foundation", "Branded"],
           pageSize: 10,
-          sortBy: "lowercaseDescription.keyword" as const,
-          sortOrder: "asc" as const,
-        };
+          sortBy: "lowercaseDescription.keyword",
+          sortOrder: "asc",
+        });
 
-        devLog("Search parameters", searchParams);
-
-        await search(term, searchParams);
-
-        // Pequeña pausa para mostrar el progreso
+        // Pausa para mostrar el progreso
         await new Promise((resolve) => setTimeout(resolve, 800));
-
-        const hasResults =
-          searchResults &&
-          searchResults.length > 0 &&
-          searchResults[0]?.foods &&
-          searchResults[0].foods.length > 0;
 
         devLog(`Search attempt ${i + 1} completed`, {
           term,
           hasResults,
-          resultsCount: searchResults?.[0]?.foods?.length || 0,
+          currentFoodsLength: currentFoods.length,
         });
 
-        if (hasResults) {
+        if (hasResults && currentFoods.length > 0) {
           foundResults = true;
           devLog("Found results, stopping search", {
             finalTerm: term,
-            totalResults:
-              searchResults.length > 0 && searchResults[0].foods
-                ? searchResults[0].foods.length
-                : 0,
+            totalResults: currentFoods.length,
           });
-          break; // Detener la búsqueda si se encuentran resultados
+          break;
         }
       }
 
       devLog("Search process completed", {
-        finalStage: foundResults ? "results" : "error", // Si no se encontraron resultados, pasa a error
+        finalStage: foundResults ? "results" : "error",
         hasResults: foundResults,
+        currentFoodsLength: currentFoods.length,
       });
 
-      setSearchStage(foundResults ? "results" : "error"); // Actualizar el estado basado en si se encontraron resultados
+      setSearchStage(foundResults ? "results" : "error");
     } catch (error) {
       devError("Error in searchFruitInformation", error);
       setSearchStage("error");
@@ -293,20 +283,15 @@ export default function FruitDetailsScreen() {
   };
 
   const renderResultsState = () => {
-    const hasResults =
-      searchResults &&
-      searchResults.length > 0 &&
-      searchResults[0]?.foods?.length;
+    const hasResultsToShow = currentFoods.length > 0;
 
     devLog("Rendering results state", {
-      hasResults,
-      resultsCount: searchResults?.[0]?.foods?.length || 0,
+      hasResults: hasResultsToShow,
+      resultsCount: currentFoods.length,
     });
 
-    if (!hasResults) {
+    if (!hasResultsToShow) {
       devLog("No results found in renderResultsState, fallback to error state");
-      // Esto debería ser manejado por el flujo principal de searchFruitInformation
-      // Si se llega aquí, algo salió mal en la lógica anterior, así que redirigimos a error.
       return renderErrorState();
     }
 
@@ -319,8 +304,8 @@ export default function FruitDetailsScreen() {
           ]}
           elevation={2}
         >
-          <MaterialCommunityIcons // Usamos MaterialCommunityIcons
-            name="check-circle" // Icono de Material para éxito
+          <MaterialCommunityIcons
+            name="check-circle"
             size={32}
             color={theme.colors.onPrimaryContainer}
           />
@@ -335,7 +320,7 @@ export default function FruitDetailsScreen() {
               variant="bodySmall"
               style={{ color: theme.colors.onPrimaryContainer }}
             >
-              {searchResults[0]?.foods?.length || 0} resultado(s) disponible(s)
+              {currentFoods.length} resultado(s) disponible(s)
             </Text>
           </View>
         </Surface>
@@ -350,7 +335,7 @@ export default function FruitDetailsScreen() {
         >
           Selecciona el producto que mejor coincida con tu fruta:
         </Text>
-        {searchResults[0]?.foods?.map((foodItem, index) => {
+        {currentFoods.map((foodItem: SearchResultFood, index: number) => {
           devLog(`Rendering food item ${index}`, {
             fdcId: foodItem.fdcId,
             description: foodItem.description.substring(0, 50) + "...",
@@ -363,7 +348,7 @@ export default function FruitDetailsScreen() {
                 styles.foodItemCard,
                 { backgroundColor: theme.colors.surface },
               ]}
-              elevation={1} // Ligeramente más bajo para un estilo más suave
+              elevation={1}
             >
               <Card.Content>
                 <Text
@@ -387,8 +372,8 @@ export default function FruitDetailsScreen() {
                     textStyle={{
                       fontSize: 12,
                       color: theme.colors.onSurfaceVariant,
-                    }} // Color del texto del chip
-                    style={{ borderColor: theme.colors.outlineVariant }} // Color del borde del chip
+                    }}
+                    style={{ borderColor: theme.colors.outlineVariant }}
                   >
                     {foodItem.dataType}
                   </Chip>
@@ -400,7 +385,7 @@ export default function FruitDetailsScreen() {
                     }}
                     style={{
                       backgroundColor: theme.colors.surfaceContainerLow,
-                    }} // Usar un color de superficie
+                    }}
                   >
                     ID: {foodItem.fdcId}
                   </Chip>
@@ -542,12 +527,12 @@ export default function FruitDetailsScreen() {
         <Surface
           style={[
             styles.successHeader,
-            { backgroundColor: theme.colors.tertiaryContainer }, // Usamos tertiaryContainer para el éxito
+            { backgroundColor: theme.colors.tertiaryContainer },
           ]}
           elevation={2}
         >
-          <MaterialCommunityIcons // Usamos MaterialCommunityIcons
-            name="food-apple" // Icono de manzana para éxito final
+          <MaterialCommunityIcons
+            name="food-apple"
             size={32}
             color={theme.colors.onTertiaryContainer}
           />
@@ -592,8 +577,8 @@ export default function FruitDetailsScreen() {
         elevation={2}
       >
         <View style={styles.errorContent}>
-          <MaterialCommunityIcons // Usamos MaterialCommunityIcons
-            name="alert-octagon" // Icono de octágono de alerta
+          <MaterialCommunityIcons
+            name="alert-octagon"
             size={64}
             color={theme.colors.onErrorContainer}
           />
@@ -620,7 +605,7 @@ export default function FruitDetailsScreen() {
               style={{
                 color: theme.colors.onErrorContainer,
                 textAlign: "center",
-                fontWeight: "bold", // Resaltar posibles causas
+                fontWeight: "bold",
                 marginBottom: 4,
               }}
             >
@@ -710,7 +695,7 @@ export default function FruitDetailsScreen() {
       searchStage,
       isSearching,
       isLoadingFood,
-      hasSearchResults: !!searchResults?.[0]?.foods?.length, // Verificar si hay foods dentro del primer searchResult
+      hasSearchResults: hasResults && currentFoods.length > 0,
       hasCurrentFood: !!currentFood,
       hasSearchError: !!searchError,
       hasFoodError: !!foodError,
@@ -720,7 +705,8 @@ export default function FruitDetailsScreen() {
     searchStage,
     isSearching,
     isLoadingFood,
-    searchResults,
+    hasResults,
+    currentFoods,
     currentFood,
     searchError,
     foodError,
@@ -740,9 +726,9 @@ export default function FruitDetailsScreen() {
           title: decodedFruitName,
           headerShown: true,
           headerStyle: {
-            backgroundColor: theme.colors.surface, // Fondo del AppBar
+            backgroundColor: theme.colors.surface,
           },
-          headerTintColor: theme.colors.onSurface, // Color de los íconos y texto del AppBar
+          headerTintColor: theme.colors.onSurface,
           headerTitleStyle: {
             fontWeight: "600",
           },
@@ -759,7 +745,7 @@ export default function FruitDetailsScreen() {
               disabled={isSearching || isLoadingFood}
               iconColor={
                 isSearching || isLoadingFood
-                  ? theme.colors.onSurfaceDisabled // Color para deshabilitado
+                  ? theme.colors.onSurfaceDisabled
                   : theme.colors.onSurface
               }
             />
@@ -780,7 +766,7 @@ export default function FruitDetailsScreen() {
             styles.fruitHeader,
             { backgroundColor: theme.colors.primaryContainer },
           ]}
-          elevation={theme.dark ? 1 : 3} // Un poco más de elevación para el header destacado
+          elevation={theme.dark ? 1 : 3}
         >
           <View style={styles.fruitHeaderContent}>
             <Text
@@ -790,9 +776,8 @@ export default function FruitDetailsScreen() {
                 { color: theme.colors.onPrimaryContainer },
               ]}
             >
-              {/* Usamos un icono de MaterialCommunityIcons para el encabezado */}
               <MaterialCommunityIcons
-                name="food-apple-outline" // Un icono de fruta genérico para el título
+                name="food-apple-outline"
                 size={36}
                 color={theme.colors.onPrimaryContainer}
               />
@@ -825,7 +810,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 32,
-    // Eliminar alignItems: 'center' aquí si las tarjetas deben ocupar todo el ancho
   },
 
   // Fruit header styles
@@ -833,22 +817,22 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 16,
-    borderRadius: 20, // Bordes más redondeados
-    padding: 16, // Reducir padding general
+    borderRadius: 20,
+    padding: 16,
   },
   fruitHeaderContent: {
-    paddingVertical: 4, // Ajustar el padding vertical interno
-    paddingHorizontal: 12, // Ajustar el padding horizontal interno
+    paddingVertical: 4,
+    paddingHorizontal: 12,
     alignItems: "center",
   },
   fruitTitle: {
     textAlign: "center",
     fontWeight: "bold",
-    marginBottom: 8, // Ajustar margen
-    flexDirection: "row", // Para alinear el icono con el texto
+    marginBottom: 8,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8, // Espacio entre icono y texto
+    gap: 8,
   },
   fruitSubtitle: {
     textAlign: "center",
@@ -856,11 +840,11 @@ const styles = StyleSheet.create({
 
   // State container styles
   stateContainer: {
-    borderRadius: 20, // Más redondeado
+    borderRadius: 20,
     padding: 32,
     alignItems: "center",
-    marginHorizontal: 16, // Usar marginHorizontal para centrar
-    marginVertical: 16, // Añadir margen vertical
+    marginHorizontal: 16,
+    marginVertical: 16,
   },
 
   // Loading content styles
@@ -871,8 +855,8 @@ const styles = StyleSheet.create({
   loadingSteps: {
     marginTop: 24,
     gap: 12,
-    alignSelf: "flex-start", // Alineado a la izquierda dentro del contenedor
-    paddingHorizontal: 16, // Añadir padding para que los pasos no toquen los bordes
+    alignSelf: "flex-start",
+    paddingHorizontal: 16,
   },
   loadingStep: {
     flexDirection: "row",
@@ -886,9 +870,9 @@ const styles = StyleSheet.create({
   },
   errorDetails: {
     marginTop: 16,
-    alignItems: "flex-start", // Alineado a la izquierda para las viñetas
+    alignItems: "flex-start",
     gap: 4,
-    width: "80%", // Limitar ancho para legibilidad
+    width: "80%",
   },
 
   // Results container styles
@@ -899,9 +883,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderRadius: 20, // Más redondeado
-    marginHorizontal: 16, // Consistencia de margen
-    marginBottom: 16, // Más espacio abajo
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   resultsHeaderText: {
     marginLeft: 12,
@@ -911,8 +895,8 @@ const styles = StyleSheet.create({
   // Food item card styles
   foodItemCard: {
     marginBottom: 12,
-    marginHorizontal: 16, // Consistencia de margen
-    borderRadius: 16, // Más redondeado
+    marginHorizontal: 16,
+    borderRadius: 16,
   },
   chipContainer: {
     flexDirection: "row",
@@ -929,8 +913,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderRadius: 20, // Más redondeado
-    marginHorizontal: 16, // Consistencia de margen
+    borderRadius: 20,
+    marginHorizontal: 16,
     marginBottom: 16,
   },
   successHeaderText: {

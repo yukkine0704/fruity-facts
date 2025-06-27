@@ -78,33 +78,35 @@ export const SearchProgressIndicator: React.FC<
   useEffect(() => {
     progressAnim.value = withTiming(progress / 100, { duration: 500 });
 
-    // Animación de la "ola" - solo iniciar una vez
-    if (progress > 0 && !waveAnimationStarted.current) {
-      waveAnimationStarted.current = true;
-      waveScale.value = withTiming(1.5, { duration: 1500 });
-      waveOpacity.value = withTiming(0, { duration: 1500 });
+    // Solo actualizar el término de búsqueda si hay uno
+    if (currentSearchTerm) {
+      // Animación de la "ola" - solo iniciar una vez por término
+      if (progress > 0 && !waveAnimationStarted.current) {
+        waveAnimationStarted.current = true;
+        waveScale.value = withTiming(1.5, { duration: 1500 });
+        waveOpacity.value = withTiming(0, { duration: 1500 });
+      }
+
+      // Reiniciar la animación de la ola para cada nuevo término
+      if (waveIntervalRef.current) {
+        clearInterval(waveIntervalRef.current);
+      }
+
+      if (progress > 0 && progress < 100) {
+        waveIntervalRef.current = setInterval(() => {
+          waveScale.value = 0;
+          waveOpacity.value = 0.5;
+          waveScale.value = withTiming(1.5, { duration: 1500 });
+          waveOpacity.value = withTiming(0, { duration: 1500 });
+        }, 2000);
+      }
     }
 
-    // Animación para el icono principal del header - solo iniciar una vez
+    // Animación para el icono principal del header
     if (progress > 0 && !headerAnimationStarted.current) {
       headerAnimationStarted.current = true;
       headerIconScale.value = withSpring(1.1, { damping: 10, stiffness: 100 });
       headerIconOpacity.value = withTiming(1, { duration: 300 });
-    }
-
-    // Limpiar intervalo anterior si existe
-    if (waveIntervalRef.current) {
-      clearInterval(waveIntervalRef.current);
-    }
-
-    // Repetir la animación de la ola cada cierto tiempo
-    if (progress > 0 && progress < 100) {
-      waveIntervalRef.current = setInterval(() => {
-        waveScale.value = 0;
-        waveOpacity.value = 0.5;
-        waveScale.value = withTiming(1.5, { duration: 1500 });
-        waveOpacity.value = withTiming(0, { duration: 1500 });
-      }, 2000);
     }
 
     return () => {
@@ -112,7 +114,7 @@ export const SearchProgressIndicator: React.FC<
         clearInterval(waveIntervalRef.current);
       }
     };
-  }, [progress]);
+  }, [progress, currentSearchTerm]); // Agregar currentSearchTerm como dependencia
 
   // Limpiar al desmontar el componente
   useEffect(() => {
@@ -186,10 +188,10 @@ export const SearchProgressIndicator: React.FC<
       <Animated.Text
         entering={FadeIn.delay(300).duration(500)}
         exiting={FadeOut.duration(300)}
-        key={currentSearchTerm}
+        key={currentSearchTerm || "preparing"}
         style={{ color: theme.colors.outline, marginBottom: 16 }}
       >
-        Término actual: "{currentSearchTerm}"
+        Término actual: "{currentSearchTerm || "Preparando búsqueda..."}"
       </Animated.Text>
 
       <View style={styles.progressSection}>
