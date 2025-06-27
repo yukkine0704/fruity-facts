@@ -7,8 +7,15 @@ import { Fruit } from "@/types/fruit";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import React, { useCallback, useState } from "react";
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import {
   ActivityIndicator,
   Button,
@@ -23,6 +30,9 @@ import {
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+const ITEMS_PER_PAGE = 3;
+const INITIAL_ITEMS = 3;
+
 export default function ExploreScreen() {
   const { theme } = useTheme();
   const [showSnackbar, setShowSnackbar] = useState(false);
@@ -31,6 +41,10 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showMenu, setShowMenu] = useState(false);
   const [sortBy, setSortBy] = useState<"name" | "calories" | "protein">("name");
+
+  // Estados para paginación
+  const [displayedItemsCount, setDisplayedItemsCount] = useState(INITIAL_ITEMS);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const {
     fruits,
@@ -56,6 +70,8 @@ export default function ExploreScreen() {
     try {
       await fetchAllFruits();
       await fetchNutritionStats();
+      // Resetear la paginación cuando se cargan nuevas frutas
+      setDisplayedItemsCount(INITIAL_ITEMS);
     } catch (err) {
       console.error("Error loading fruits:", err);
     }
@@ -63,13 +79,11 @@ export default function ExploreScreen() {
 
   const handleRefresh = async () => {
     await loadFruits();
-    showMessage("Lista de frutas actualizada."); // Mensaje más genérico
+    showMessage("Lista de frutas actualizada.");
   };
 
   const handleFruitPress = (fruit: Fruit) => {
-    // showMessage(`Navegando a: ${fruit.name}`); // Podríamos eliminar este snackbar para no saturar
     console.log("Fruit selected:", fruit);
-
     router.push({
       pathname: "/fruit-details/[fruitName]",
       params: { fruitName: encodeURIComponent(fruit.name) },
@@ -77,10 +91,9 @@ export default function ExploreScreen() {
   };
 
   const handleSearch = () => {
-    // Si la búsqueda local es el enfoque principal de este Searchbar,
-    // el onSubmitEditing simplemente filtra la lista mostrada.
-    // Si se presiona el icono de tune, se va a la búsqueda avanzada.
     showMessage(`Buscando: "${searchQuery}"`);
+    // Resetear paginación al buscar
+    setDisplayedItemsCount(INITIAL_ITEMS);
   };
 
   const handleAdvancedSearch = () => {
@@ -101,6 +114,8 @@ export default function ExploreScreen() {
   const handleSort = (newSortBy: "name" | "calories" | "protein") => {
     setSortBy(newSortBy);
     setShowMenu(false);
+    // Resetear paginación al cambiar ordenamiento
+    setDisplayedItemsCount(INITIAL_ITEMS);
     showMessage(
       `Ordenado por ${
         newSortBy === "name"
@@ -141,6 +156,59 @@ export default function ExploreScreen() {
     );
   };
 
+  // Función para obtener las frutas que se deben mostrar (con paginación)
+  const getDisplayedFruits = () => {
+    const filteredFruits = getFilteredFruits();
+    return filteredFruits.slice(0, displayedItemsCount);
+  };
+
+  // Función para cargar más elementos
+  const loadMoreItems = useCallback(async () => {
+    const filteredFruits = getFilteredFruits();
+    const currentDisplayed = displayedItemsCount;
+    const totalAvailable = filteredFruits.length;
+
+    if (currentDisplayed >= totalAvailable || isLoadingMore) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    // Simular un pequeño delay para mostrar el loading
+    setTimeout(() => {
+      const newCount = Math.min(
+        currentDisplayed + ITEMS_PER_PAGE,
+        totalAvailable
+      );
+      setDisplayedItemsCount(newCount);
+      setIsLoadingMore(false);
+
+      const loadedItems = newCount - currentDisplayed;
+    }, 500);
+  }, [displayedItemsCount, isLoadingMore, searchQuery, sortBy, fruits]);
+
+  // Detectar cuando se llega al final del scroll
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { layoutMeasurement, contentOffset, contentSize } =
+        event.nativeEvent;
+      const paddingToBottom = 20;
+
+      if (
+        layoutMeasurement.height + contentOffset.y >=
+        contentSize.height - paddingToBottom
+      ) {
+        loadMoreItems();
+      }
+    },
+    [loadMoreItems]
+  );
+
+  // Resetear paginación cuando cambie la búsqueda
+  React.useEffect(() => {
+    setDisplayedItemsCount(INITIAL_ITEMS);
+  }, [searchQuery]);
+
   const renderHeader = () => (
     <Surface
       style={[
@@ -149,11 +217,10 @@ export default function ExploreScreen() {
       ]}
       elevation={theme.dark ? 2 : 3}
     >
-      {/* Asumo que IconSymbol renderiza MaterialCommunityIcons o similar */}
       <IconSymbol
         size={60}
         color={theme.colors.onPrimaryContainer}
-        name="apple.logo" // Ajusta el nombre del icono si IconSymbol usa un conjunto diferente (ej: "apple")
+        name="apple.logo"
         style={styles.headerIcon}
       />
       <Text
@@ -216,7 +283,13 @@ export default function ExploreScreen() {
   );
 
   const renderSearchSection = () => (
-    <>
+    <Surface
+      style={[
+        styles.searchSection,
+        { backgroundColor: theme.colors.surfaceContainerHigh },
+      ]}
+      elevation={theme.dark ? 4 : 5}
+    >
       <View style={styles.searchContainer}>
         <Searchbar
           placeholder="Buscar frutas localmente..."
@@ -232,14 +305,15 @@ export default function ExploreScreen() {
           placeholderTextColor={theme.colors.onSurfaceVariant}
           right={() => (
             <IconButton
-              icon="tune-variant" // Icono más moderno para filtros
-              size={24} // Aumentar tamaño
+              icon="tune-variant"
+              size={24}
               onPress={handleAdvancedSearch}
               iconColor={theme.colors.primary}
             />
           )}
         />
       </View>
+
       <View style={styles.controlsContainer}>
         <Menu
           visible={showMenu}
@@ -251,14 +325,13 @@ export default function ExploreScreen() {
               icon="sort"
               compact
               style={styles.sortButton}
-              labelStyle={{ color: theme.colors.primary }} // Color del texto del botón
-              textColor={theme.colors.primary} // Color del icono
+              labelStyle={{ color: theme.colors.primary }}
+              textColor={theme.colors.primary}
             >
               Ordenar por
             </Button>
           }
         >
-          {/* Usar List.Item para mayor coherencia con Material Design */}
           <List.Section>
             <List.Subheader>Ordenar por:</List.Subheader>
             <List.Item
@@ -372,7 +445,7 @@ export default function ExploreScreen() {
           Búsqueda avanzada
         </Button>
       </View>
-    </>
+    </Surface>
   );
 
   const renderError = () => (
@@ -384,7 +457,7 @@ export default function ExploreScreen() {
       elevation={theme.dark ? 1 : 2}
     >
       <MaterialCommunityIcons
-        name="alert-circle-outline" // Icono de error más amigable
+        name="alert-circle-outline"
         size={48}
         color={theme.colors.onErrorContainer}
         style={styles.errorIcon}
@@ -470,20 +543,55 @@ export default function ExploreScreen() {
     </View>
   );
 
+  const renderLoadMoreIndicator = () => {
+    const filteredFruits = getFilteredFruits();
+    const hasMoreItems = displayedItemsCount < filteredFruits.length;
+
+    if (!hasMoreItems) return null;
+
+    return (
+      <View style={styles.loadMoreContainer}>
+        {isLoadingMore ? (
+          <View style={styles.loadingMoreIndicator}>
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+            <Text
+              variant="bodyMedium"
+              style={[
+                styles.loadingMoreText,
+                { color: theme.colors.onSurface },
+              ]}
+            >
+              Cargando más frutas...
+            </Text>
+          </View>
+        ) : (
+          <Button
+            mode="outlined"
+            onPress={loadMoreItems}
+            icon="chevron-down"
+            style={styles.loadMoreButton}
+            textColor={theme.colors.primary}
+          >
+            Cargar más ({filteredFruits.length - displayedItemsCount} restantes)
+          </Button>
+        )}
+      </View>
+    );
+  };
+
   const renderContent = () => {
     if (error) {
       return renderError();
     }
 
     if (isLoading && fruits.length === 0) {
-      // Mostrar skeletons solo si no hay frutas cargadas aún
       return renderSkeletons();
     }
 
     const filteredFruits = getFilteredFruits();
+    const displayedFruits = getDisplayedFruits();
 
     if (filteredFruits.length === 0 && !isLoading) {
-      // Mostrar estado vacío solo si no hay frutas y no está cargando
       return renderEmptyState();
     }
 
@@ -498,7 +606,7 @@ export default function ExploreScreen() {
             {searchQuery ? "Resultados" : "Todas las frutas"} (
             {filteredFruits.length})
           </Text>
-          {searchQuery.trim() !== "" && ( // Mostrar info de búsqueda solo si hay query
+          {searchQuery.trim() !== "" && (
             <Text
               variant="bodySmall"
               style={[
@@ -509,8 +617,21 @@ export default function ExploreScreen() {
               Mostrando resultados para: "{searchQuery}"
             </Text>
           )}
+          {displayedFruits.length < filteredFruits.length && (
+            <Text
+              variant="bodySmall"
+              style={[
+                styles.paginationInfo,
+                { color: theme.colors.onSurfaceVariant },
+              ]}
+            >
+              Mostrando {displayedFruits.length} de {filteredFruits.length}{" "}
+              frutas
+            </Text>
+          )}
         </View>
-        {filteredFruits.map((fruit, index) => (
+
+        {displayedFruits.map((fruit, index) => (
           <FruitCard
             key={fruit.id}
             fruit={fruit}
@@ -518,6 +639,8 @@ export default function ExploreScreen() {
             index={index}
           />
         ))}
+
+        {renderLoadMoreIndicator()}
       </View>
     );
   };
@@ -554,30 +677,29 @@ export default function ExploreScreen() {
             onRefresh={handleRefresh}
             colors={[theme.colors.primary]}
             tintColor={theme.colors.primary}
-            progressBackgroundColor={theme.colors.surfaceVariant} // Fondo para el indicador de refresh
+            progressBackgroundColor={theme.colors.surfaceVariant}
           />
         }
         contentContainerStyle={styles.scrollContent}
-        stickyHeaderIndices={[1]} // Hacer sticky la sección de búsqueda
+        stickyHeaderIndices={[1]}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
       >
         {renderHeader()}
         {renderSearchSection()}
         {renderContent()}
 
-        {/* Espaciado inferior para evitar que el contenido sea cubierto por el FAB */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* FAB para Búsqueda Avanzada/Filtros */}
       <FAB
-        icon="filter-variant" // Nuevo icono más relevante para la acción principal
-        label="Filtrar" // Etiqueta para una mejor comprensión
+        icon="filter-variant"
+        label="Filtrar"
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={handleAdvancedSearch} // Acción principal del FAB
-        color={theme.colors.onPrimary} // Color del icono y texto del FAB
+        onPress={handleAdvancedSearch}
+        color={theme.colors.onPrimary}
       />
 
-      {/* Snackbar */}
       <Snackbar
         visible={showSnackbar}
         onDismiss={() => setShowSnackbar(false)}
@@ -586,7 +708,7 @@ export default function ExploreScreen() {
         action={{
           label: "OK",
           onPress: () => setShowSnackbar(false),
-          textColor: theme.colors.inversePrimary, // Color para el texto de la acción del Snackbar
+          textColor: theme.colors.inversePrimary,
         }}
       >
         <Text style={{ color: theme.colors.inverseOnSurface }}>
@@ -610,17 +732,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100, // Espacio para que el FAB no cubra el contenido
+    paddingBottom: 100,
   },
   header: {
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     padding: 24,
-    marginBottom: 16, // Aumentado el margen inferior
+    marginBottom: 16,
     alignItems: "center",
   },
   headerIcon: {
-    marginBottom: 16, // Aumentado el margen inferior
+    marginBottom: 16,
   },
   title: {
     textAlign: "center",
@@ -629,7 +751,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: "center",
-    marginBottom: 24, // Aumentado el margen inferior
+    marginBottom: 24,
     paddingHorizontal: 16,
     lineHeight: 22,
   },
@@ -640,39 +762,38 @@ const styles = StyleSheet.create({
     marginTop: 8,
     width: "100%",
     justifyContent: "space-around",
-    gap: 16, // Espacio entre los ítems de las estadísticas
+    gap: 16,
   },
   statItem: {
     alignItems: "center",
-    flex: 1, // Para que cada ítem ocupe el mismo espacio
+    flex: 1,
   },
 
-  // Search section styles
   searchSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16, // Aumentado el margen inferior
+    padding: 20, // Más padding como en NutritionDetailsCard
+    borderRadius: 26, // Bordes redondeados
+    marginHorizontal: 16, // Margen lateral consistente
+    marginVertical: 20, // Más espacio vertical
   },
   searchContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 16, // Aumentado el margen inferior
+    marginBottom: 20, // Más margen como en NutritionDetailsCard
   },
   searchbar: {
     elevation: 0,
-    borderRadius: 16, // Más redondeado
-    height: 56, // Altura estándar para input de Material Design
+    borderRadius: 16,
+    height: 56,
   },
   controlsContainer: {
-    paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    flexWrap: "wrap", // Para que los botones se ajusten en pantallas pequeñas
+    flexWrap: "wrap",
+    gap: 12,
   },
   sortButton: {
-    borderRadius: 28, // Más redondeado
-    minWidth: 120, // Ancho mínimo para el botón
-    height: 48, // Altura estándar para botones de Material Design
+    borderRadius: 28,
+    minWidth: 120,
+    height: 48,
     justifyContent: "center",
   },
   advancedButton: {
@@ -684,81 +805,104 @@ const styles = StyleSheet.create({
   // Fruits section styles
   fruitsContainer: {
     paddingHorizontal: 16,
-    paddingTop: 8, // Pequeño padding superior para separación
+    paddingTop: 8,
   },
   fruitsHeader: {
-    marginBottom: 16, // Más espacio debajo del encabezado de frutas
+    marginBottom: 16,
   },
   fruitsTitle: {
     fontWeight: "bold",
-    fontSize: 20, // Un poco más grande
+    fontSize: 20,
     marginBottom: 4,
-    flexDirection: "row", // Para alinear icono y texto
+    flexDirection: "row",
     alignItems: "center",
-    gap: 8, // Espacio entre icono y texto
+    gap: 8,
   },
   searchInfo: {
     fontStyle: "italic",
     marginTop: 4,
   },
+  paginationInfo: {
+    fontStyle: "italic",
+    marginTop: 4,
+    fontSize: 12,
+  },
   skeletonContainer: {
     paddingHorizontal: 16,
+  },
+
+  // Load more styles
+  loadMoreContainer: {
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  loadMoreButton: {
+    borderRadius: 24,
+    paddingHorizontal: 20,
+  },
+  loadingMoreIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  loadingMoreText: {
+    fontSize: 14,
   },
 
   // Error styles
   errorContainer: {
     marginHorizontal: 16,
-    marginTop: 16, // Margen superior
+    marginTop: 16,
     padding: 24,
-    borderRadius: 20, // Más redondeado
+    borderRadius: 20,
     alignItems: "center",
   },
   errorIcon: {
-    marginBottom: 20, // Más margen
+    marginBottom: 20,
   },
   errorTitle: {
     fontWeight: "bold",
-    marginBottom: 12, // Más margen
+    marginBottom: 12,
     textAlign: "center",
   },
   errorMessage: {
     textAlign: "center",
-    marginBottom: 20, // Más margen
+    marginBottom: 20,
     lineHeight: 22,
   },
   retryButton: {
-    borderRadius: 28, // Más redondeado
-    height: 52, // Altura consistente
+    borderRadius: 28,
+    height: 52,
     justifyContent: "center",
-    paddingHorizontal: 20, // Más padding horizontal
+    paddingHorizontal: 20,
   },
 
   // Empty state styles
   emptyContainer: {
     marginHorizontal: 16,
-    marginTop: 16, // Margen superior
+    marginTop: 16,
     padding: 32,
-    borderRadius: 20, // Más redondeado
+    borderRadius: 20,
     alignItems: "center",
   },
   emptyIcon: {
-    marginBottom: 20, // Más margen
+    marginBottom: 20,
   },
   emptyTitle: {
     fontWeight: "bold",
-    marginBottom: 12, // Más margen
+    marginBottom: 12,
     textAlign: "center",
   },
   emptyMessage: {
     textAlign: "center",
-    marginBottom: 20, // Más margen
+    marginBottom: 20,
     lineHeight: 22,
   },
   refreshButton: {
-    borderRadius: 28, // Más redondeado
-    height: 52, // Altura consistente
+    borderRadius: 28,
+    height: 52,
     justifyContent: "center",
-    paddingHorizontal: 20, // Más padding horizontal
+    paddingHorizontal: 20,
   },
 
   bottomSpacing: {
