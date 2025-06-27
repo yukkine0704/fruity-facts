@@ -94,17 +94,14 @@ export const useFDCStore = create<FDCState>()(
             setLoading(true);
             setError(null);
 
-            const results = await fdcService.postSearchFoods(criteria);
-
-            // Tomar el primer resultado (que contiene todos los datos)
-            const mainResult = results[0];
+            const result = await fdcService.searchFoodsByCriteria(criteria);
 
             set({
-              searchResults: results,
+              searchResults: [result], // Envolver en array para mantener compatibilidad
               searchCriteria: criteria,
-              currentPage: mainResult?.currentPage || 1,
-              totalPages: mainResult?.totalPages || 0,
-              totalHits: mainResult?.totalHits || 0,
+              currentPage: result?.currentPage || 1,
+              totalPages: result?.totalPages || 0,
+              totalHits: result?.totalHits || 0,
               isLoading: false,
             });
           } catch (error: any) {

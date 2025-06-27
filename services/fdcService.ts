@@ -79,6 +79,25 @@ class FDCService {
     return response.data;
   }
 
+  async getFoodsListByCriteria(
+    criteria: FoodListCriteria
+  ): Promise<AbridgedFoodItem[]> {
+    const params: any = {
+      pageSize: criteria.pageSize || 50,
+      pageNumber: criteria.pageNumber || 1,
+    };
+
+    if (criteria.dataType && criteria.dataType.length > 0) {
+      params.dataType = criteria.dataType.join(",");
+    }
+
+    if (criteria.sortBy) params.sortBy = criteria.sortBy;
+    if (criteria.sortOrder) params.sortOrder = criteria.sortOrder;
+
+    const response = await fdcApiClient.get("/v1/foods/list", { params });
+    return response.data;
+  }
+
   async searchFoods(
     query: string,
     dataType?: ("Branded" | "Foundation" | "Survey (FNDDS)" | "SR Legacy")[],
@@ -112,6 +131,27 @@ class FDCService {
 
   async postSearchFoods(criteria: FoodSearchCriteria): Promise<SearchResult[]> {
     const response = await fdcApiClient.post("/v1/foods/search", criteria);
+    return response.data;
+  }
+
+  async searchFoodsByCriteria(
+    criteria: FoodSearchCriteria
+  ): Promise<SearchResult> {
+    const params: any = {
+      query: criteria.query,
+      pageSize: criteria.pageSize || 50,
+      pageNumber: criteria.pageNumber || 1,
+    };
+
+    if (criteria.dataType && criteria.dataType.length > 0) {
+      params.dataType = criteria.dataType.join(",");
+    }
+
+    if (criteria.sortBy) params.sortBy = criteria.sortBy;
+    if (criteria.sortOrder) params.sortOrder = criteria.sortOrder;
+    if (criteria.brandOwner) params.brandOwner = criteria.brandOwner;
+
+    const response = await fdcApiClient.get("/v1/foods/search", { params });
     return response.data;
   }
 

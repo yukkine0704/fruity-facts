@@ -3,6 +3,7 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
+import Constants from "expo-constants";
 
 const FRUITYVICE_BASE_URL = __DEV__
   ? "https://www.fruityvice.com/api/"
@@ -18,7 +19,7 @@ export const fruityApiClient: AxiosInstance = axios.create({
 });
 
 const FDC_BASE_URL = "https://api.nal.usda.gov/fdc";
-const FDC_API_KEY = process.env.VITE_FDC_API_KEY;
+const FDC_API_KEY = Constants.expoConfig?.extra?.FDC_API_KEY;
 export const fdcApiClient: AxiosInstance = axios.create({
   baseURL: FDC_BASE_URL,
   timeout: 15000,
@@ -56,6 +57,7 @@ fruityApiClient.interceptors.response.use(
 
 fdcApiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // ✅ Simplificar - solo agregar como query param (funciona para todos los GET)
     if (!config.params) {
       config.params = {};
     }
@@ -64,6 +66,13 @@ fdcApiClient.interceptors.request.use(
     console.log(
       `🥕 FDC Request: ${config.method?.toUpperCase()} ${config.url}`
     );
+
+    if (!FDC_API_KEY) {
+      console.error("❌ FDC API Key is missing! Check your .env file");
+    } else {
+      console.log("🔑 API Key present:", FDC_API_KEY.substring(0, 8) + "...");
+    }
+
     return config;
   },
   (error) => {
