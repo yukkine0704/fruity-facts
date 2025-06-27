@@ -180,16 +180,6 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
       </Card>
     );
   }
-
-  // Versión simple para usar en listas
-  return (
-    <List.Item
-      title="Tema de la aplicación"
-      description={`Actual: ${getThemeDisplayName}`}
-      left={(props) => <List.Icon {...props} icon={getThemeIcon} />}
-      right={(props) => <List.Icon {...props} icon="chevron-right" />}
-    />
-  );
 };
 
 const styles = StyleSheet.create({

@@ -216,10 +216,7 @@ export default function ExploreScreen() {
   );
 
   const renderSearchSection = () => (
-    <Surface
-      style={[styles.searchSection, { backgroundColor: theme.colors.surface }]}
-      elevation={theme.dark ? 0 : 1} // Menor elevación para la barra de búsqueda
-    >
+    <>
       <View style={styles.searchContainer}>
         <Searchbar
           placeholder="Buscar frutas localmente..."
@@ -243,7 +240,6 @@ export default function ExploreScreen() {
           )}
         />
       </View>
-
       <View style={styles.controlsContainer}>
         <Menu
           visible={showMenu}
@@ -376,7 +372,7 @@ export default function ExploreScreen() {
           Búsqueda avanzada
         </Button>
       </View>
-    </Surface>
+    </>
   );
 
   const renderError = () => (
@@ -658,6 +654,7 @@ const styles = StyleSheet.create({
     marginBottom: 16, // Aumentado el margen inferior
   },
   searchContainer: {
+    paddingHorizontal: 16,
     marginBottom: 16, // Aumentado el margen inferior
   },
   searchbar: {
@@ -666,6 +663,7 @@ const styles = StyleSheet.create({
     height: 56, // Altura estándar para input de Material Design
   },
   controlsContainer: {
+    paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

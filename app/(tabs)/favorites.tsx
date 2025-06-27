@@ -221,7 +221,7 @@ export default function FavoritesScreen() {
           backgroundColor: theme.colors.surfaceContainerHighest, // Color más prominente para la barra de búsqueda
           borderRadius: 28, // Bordes más suaves y modernos
           marginHorizontal: 16, // Márgenes laterales para que "flote"
-          marginTop: -32, // Para superponerla ligeramente sobre el header
+          marginTop: 20, // Para superponerla ligeramente sobre el header
           paddingVertical: 12, // Más padding
           paddingHorizontal: 16, // Más padding
           zIndex: 1, // Asegurar que esté por encima de otros elementos

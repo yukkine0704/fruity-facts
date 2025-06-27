@@ -189,73 +189,164 @@ export default function ProfileScreen() {
       ]}
     >
       <Card.Content>
-        <Text
-          variant="titleLarge"
-          style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
-        >
-          <List.Icon icon="chart-bar" style={styles.sectionIcon} />
-          Estadísticas {/* Ícono */}
-        </Text>
-
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <Text
-              variant="displaySmall"
-              style={{ color: theme.colors.primary, fontWeight: "bold" }}
+        <View style={styles.statsHeader}>
+          <View style={styles.statsHeaderLeft}>
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: theme.colors.primaryContainer },
+              ]}
             >
-              {stats.totalFruitsViewed}
-            </Text>
+              <List.Icon
+                icon="chart-pie"
+                color={theme.colors.onPrimaryContainer}
+              />
+            </View>
             <Text
-              variant="bodyMedium"
-              style={{ color: theme.colors.onSurfaceVariant }}
+              variant="titleMedium"
+              style={[styles.statsTitle, { color: theme.colors.onSurface }]}
             >
-              Frutas vistas
+              Estadísticas
             </Text>
           </View>
+          <Chip
+            icon="trending-up"
+            compact
+            style={[
+              styles.trendChip,
+              { backgroundColor: theme.colors.tertiaryContainer },
+            ]}
+            textStyle={{
+              color: theme.colors.onTertiaryContainer,
+              fontSize: 12,
+            }}
+          >
+            Activo
+          </Chip>
+        </View>
 
-          <View style={styles.statItem}>
-            <Text
-              variant="displaySmall"
-              style={{ color: theme.colors.secondary, fontWeight: "bold" }}
-            >
-              {stats.totalFavorites}
-            </Text>
-            <Text
-              variant="bodyMedium"
-              style={{ color: theme.colors.onSurfaceVariant }}
-            >
-              Favoritos
-            </Text>
+        <View style={styles.modernStatsGrid}>
+          <View
+            style={[
+              styles.modernStatItem,
+              { backgroundColor: theme.colors.primaryContainer },
+            ]}
+          >
+            <View style={styles.statContent}>
+              <Text
+                variant="headlineSmall"
+                style={{
+                  color: theme.colors.onPrimaryContainer,
+                  fontWeight: "700",
+                }}
+              >
+                {stats.totalFruitsViewed}
+              </Text>
+              <Text
+                variant="labelMedium"
+                style={{ color: theme.colors.onPrimaryContainer, opacity: 0.8 }}
+              >
+                Frutas vistas
+              </Text>
+            </View>
+            <List.Icon
+              icon="fruit-pineapple"
+              color={theme.colors.onPrimaryContainer}
+              style={styles.statIcon}
+            />
           </View>
 
-          <View style={styles.statItem}>
-            <Text
-              variant="displaySmall"
-              style={{ color: theme.colors.tertiary, fontWeight: "bold" }}
-            >
-              {stats.totalSearches}
-            </Text>
-            <Text
-              variant="bodyMedium"
-              style={{ color: theme.colors.onSurfaceVariant }}
-            >
-              Búsquedas
-            </Text>
+          <View
+            style={[
+              styles.modernStatItem,
+              { backgroundColor: theme.colors.secondaryContainer },
+            ]}
+          >
+            <View style={styles.statContent}>
+              <Text
+                variant="headlineSmall"
+                style={{
+                  color: theme.colors.onSecondaryContainer,
+                  fontWeight: "700",
+                }}
+              >
+                {stats.totalFavorites}
+              </Text>
+              <Text
+                variant="labelMedium"
+                style={{
+                  color: theme.colors.onSecondaryContainer,
+                  opacity: 0.8,
+                }}
+              >
+                Favoritos
+              </Text>
+            </View>
+            <List.Icon
+              icon="heart"
+              color={theme.colors.onSecondaryContainer}
+              style={styles.statIcon}
+            />
           </View>
 
-          <View style={styles.statItem}>
-            <Text
-              variant="displaySmall"
-              style={{ color: theme.colors.primary, fontWeight: "bold" }}
-            >
-              {stats.daysActive}
-            </Text>
-            <Text
-              variant="bodyMedium"
-              style={{ color: theme.colors.onSurfaceVariant }}
-            >
-              Días activo
-            </Text>
+          <View
+            style={[
+              styles.modernStatItem,
+              { backgroundColor: theme.colors.tertiaryContainer },
+            ]}
+          >
+            <View style={styles.statContent}>
+              <Text
+                variant="headlineSmall"
+                style={{
+                  color: theme.colors.onTertiaryContainer,
+                  fontWeight: "700",
+                }}
+              >
+                {stats.totalSearches}
+              </Text>
+              <Text
+                variant="labelMedium"
+                style={{
+                  color: theme.colors.onTertiaryContainer,
+                  opacity: 0.8,
+                }}
+              >
+                Búsquedas
+              </Text>
+            </View>
+            <List.Icon
+              icon="magnify"
+              color={theme.colors.onTertiaryContainer}
+              style={styles.statIcon}
+            />
+          </View>
+
+          <View
+            style={[
+              styles.modernStatItem,
+              { backgroundColor: theme.colors.surfaceContainerHighest },
+            ]}
+          >
+            <View style={styles.statContent}>
+              <Text
+                variant="headlineSmall"
+                style={{ color: theme.colors.onSurface, fontWeight: "700" }}
+              >
+                {stats.daysActive}
+              </Text>
+              <Text
+                variant="labelMedium"
+                style={{ color: theme.colors.onSurfaceVariant }}
+              >
+                Días activo
+              </Text>
+            </View>
+            <List.Icon
+              icon="calendar-check"
+              color={theme.colors.onSurfaceVariant}
+              style={styles.statIcon}
+            />
           </View>
         </View>
       </Card.Content>
@@ -284,30 +375,38 @@ export default function ProfileScreen() {
               ? ` (${systemColorScheme === "dark" ? "Oscuro" : "Claro"})`
               : ""
           }`}
-          left={(props) => <List.Icon {...props} icon={getThemeIcon} />}
+          left={(props) => (
+            <View style={styles.listIconContainer}>
+              <List.Icon {...props} icon={getThemeIcon} />
+            </View>
+          )}
           right={(props) => (
-            <View style={styles.themeControls}>
+            <View style={styles.themeControlsExpanded}>
               <Button
                 mode="contained-tonal"
-                compact
+                compact={false}
                 onPress={handleQuickThemeToggle}
-                style={styles.quickToggleButton}
+                style={styles.themeToggleButton}
+                labelStyle={styles.buttonLabel}
               >
                 Cambiar
               </Button>
-              <List.Icon {...props} icon="chevron-right" />
+              <View style={styles.chevronContainer}>
+                <List.Icon {...props} icon="chevron-right" />
+              </View>
             </View>
           )}
           onPress={handleThemePress}
           style={[
-            styles.settingItem,
+            styles.settingItemExpanded,
             {
               backgroundColor: theme.colors.surfaceContainerLow,
               borderRadius: 12,
             },
           ]}
-          titleStyle={{ paddingVertical: 4 }}
-          descriptionStyle={{ paddingBottom: 4 }}
+          titleStyle={styles.listTitleExpanded}
+          descriptionStyle={styles.listDescriptionExpanded}
+          contentStyle={styles.listContentExpanded}
         />
 
         <Divider
@@ -715,6 +814,7 @@ const styles = StyleSheet.create({
     width: 24, // Asegurar que el ícono tenga un ancho fijo
     height: 24, // Asegurar que el ícono tenga una altura fija
   },
+  // Estilos antiguos de stats que se pueden mantener para otras secciones si es necesario
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -726,6 +826,50 @@ const styles = StyleSheet.create({
     flexBasis: "48%",
     paddingVertical: 8,
   },
+  // Nuevos estilos para la sección de estadísticas moderna
+  statsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  statsHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  statsTitle: {
+    fontWeight: "600",
+  },
+  trendChip: {
+    height: 28,
+  },
+  modernStatsGrid: {
+    gap: 12,
+  },
+  modernStatItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  statContent: {
+    flex: 1,
+  },
+  statIcon: {
+    opacity: 0.7,
+  },
+  // Estilos existentes continúan
   settingItem: {
     marginVertical: 4,
     paddingVertical: 4,
@@ -742,5 +886,55 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 48,
+  },
+  listIconContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 40,
+    height: 40,
+    marginRight: 4,
+  },
+  themeControlsExpanded: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingRight: 4,
+  },
+  themeToggleButton: {
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    minWidth: 80,
+  },
+  buttonLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  chevronContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 24,
+    height: 24,
+  },
+  settingItemExpanded: {
+    marginVertical: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    minHeight: 72,
+  },
+  listTitleExpanded: {
+    paddingVertical: 6,
+    fontSize: 16,
+    fontWeight: "600",
+    lineHeight: 20,
+  },
+  listDescriptionExpanded: {
+    paddingBottom: 6,
+    paddingTop: 2,
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  listContentExpanded: {
+    paddingVertical: 4,
   },
 });
