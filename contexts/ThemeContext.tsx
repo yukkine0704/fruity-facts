@@ -12,6 +12,7 @@ type ThemeStore = {
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
+  cycleTheme: () => void; // Nueva función para ciclar entre los 3 modos
 };
 
 export const useThemeStore = create<ThemeStore>()(
@@ -26,8 +27,15 @@ export const useThemeStore = create<ThemeStore>()(
         } else if (current === "light") {
           set({ themeMode: "dark" });
         } else {
-          set({ themeMode: "light" });
+          set({ themeMode: "system" });
         }
+      },
+      cycleTheme: () => {
+        const current = get().themeMode;
+        const modes: ThemeMode[] = ["system", "light", "dark"];
+        const currentIndex = modes.indexOf(current);
+        const nextIndex = (currentIndex + 1) % modes.length;
+        set({ themeMode: modes[nextIndex] });
       },
     }),
     {
@@ -39,7 +47,7 @@ export const useThemeStore = create<ThemeStore>()(
 
 export const useTheme = () => {
   const systemColorScheme = useColorScheme();
-  const { themeMode } = useThemeStore();
+  const { themeMode, setThemeMode, toggleTheme, cycleTheme } = useThemeStore();
   const { lightTheme, darkTheme } = useFruityTheme();
 
   const isDarkMode = React.useMemo(() => {
@@ -53,12 +61,42 @@ export const useTheme = () => {
     return isDarkMode ? darkTheme : lightTheme;
   }, [isDarkMode, darkTheme, lightTheme]);
 
+  const getThemeDisplayName = React.useMemo(() => {
+    switch (themeMode) {
+      case "light":
+        return "Claro";
+      case "dark":
+        return "Oscuro";
+      case "system":
+        return "Sistema";
+      default:
+        return "Sistema";
+    }
+  }, [themeMode]);
+
+  const getThemeIcon = React.useMemo(() => {
+    switch (themeMode) {
+      case "light":
+        return "white-balance-sunny";
+      case "dark":
+        return "moon-waning-crescent";
+      case "system":
+        return "theme-light-dark";
+      default:
+        return "theme-light-dark";
+    }
+  }, [themeMode]);
+
   return {
     isDarkMode,
     theme,
     themeMode,
-    setThemeMode: useThemeStore.getState().setThemeMode,
-    toggleTheme: useThemeStore.getState().toggleTheme,
+    setThemeMode,
+    toggleTheme,
+    cycleTheme,
+    getThemeDisplayName,
+    getThemeIcon,
+    systemColorScheme,
   };
 };
 

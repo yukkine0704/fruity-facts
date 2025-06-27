@@ -1,3 +1,4 @@
+import { ThemeSelector } from "@/components/ThemeSelector";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUserStore } from "@/stores/userStore";
 import React, { useState } from "react";
@@ -6,6 +7,7 @@ import {
   Avatar,
   Button,
   Card,
+  Chip,
   Dialog,
   Divider,
   List,
@@ -19,10 +21,21 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
-  const { theme, toggleTheme, isDarkMode } = useTheme();
+  const {
+    theme,
+    themeMode,
+    setThemeMode,
+    cycleTheme,
+    getThemeDisplayName,
+    getThemeIcon,
+    isDarkMode,
+    systemColorScheme,
+  } = useTheme();
+
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [showNameDialog, setShowNameDialog] = useState(false);
+  const [showThemeDialog, setShowThemeDialog] = useState(false);
   const [tempName, setTempName] = useState("");
 
   const { user, updateUserName, getUserStats, clearUserData, exportUserData } =
@@ -35,9 +48,13 @@ export default function ProfileScreen() {
     setShowSnackbar(true);
   };
 
-  const handleThemeToggle = () => {
-    toggleTheme();
-    showMessage(`Tema ${!isDarkMode ? "oscuro" : "claro"} activado`);
+  const handleThemePress = () => {
+    setShowThemeDialog(true);
+  };
+
+  const handleQuickThemeToggle = () => {
+    cycleTheme();
+    showMessage(`Tema cambiado a: ${getThemeDisplayName}`);
   };
 
   const handleNameChange = () => {
@@ -124,6 +141,14 @@ export default function ProfileScreen() {
         Miembro desde{" "}
         {user?.joinDate ? new Date(user.joinDate).toLocaleDateString() : "hoy"}
       </Text>
+
+      <Chip
+        icon={getThemeIcon}
+        style={[styles.themeChip, { backgroundColor: theme.colors.surface }]}
+        children={getThemeDisplayName}
+        compact
+        disabled
+      />
 
       <Button
         mode="outlined"
@@ -215,17 +240,33 @@ export default function ProfileScreen() {
           ⚙️ Configuración
         </Text>
 
+        {/* Configuración de tema mejorada */}
         <List.Item
-          title="Tema oscuro"
-          description="Cambiar entre tema claro y oscuro"
-          left={(props) => <List.Icon {...props} icon="theme-light-dark" />}
-          right={() => (
-            <Switch
-              value={isDarkMode}
-              onValueChange={handleThemeToggle}
-              color={theme.colors.primary}
-            />
+          title="Apariencia"
+          description={`Tema actual: ${getThemeDisplayName}${
+            themeMode === "system"
+              ? ` (${systemColorScheme === "dark" ? "Oscuro" : "Claro"})`
+              : ""
+          }`}
+          left={(props) => <List.Icon {...props} icon={getThemeIcon} />}
+          right={(props) => (
+            <View style={styles.themeControls}>
+              <Button
+                mode="outlined"
+                compact
+                onPress={handleQuickThemeToggle}
+                style={styles.quickToggleButton}
+              >
+                Cambiar
+              </Button>
+              <List.Icon {...props} icon="chevron-right" />
+            </View>
           )}
+          onPress={handleThemePress}
+          style={[
+            styles.settingItem,
+            { backgroundColor: theme.colors.surfaceVariant },
+          ]}
         />
 
         <Divider style={{ marginVertical: 8 }} />
@@ -249,6 +290,21 @@ export default function ProfileScreen() {
           title="Búsqueda automática"
           description="Buscar automáticamente al escribir"
           left={(props) => <List.Icon {...props} icon="magnify-scan" />}
+          right={() => (
+            <Switch
+              value={true}
+              onValueChange={() => showMessage("Próximamente disponible")}
+              color={theme.colors.primary}
+            />
+          )}
+        />
+
+        <Divider style={{ marginVertical: 8 }} />
+
+        <List.Item
+          title="Animaciones"
+          description="Habilitar animaciones en la interfaz"
+          left={(props) => <List.Icon {...props} icon="animation" />}
           right={() => (
             <Switch
               value={true}
@@ -378,6 +434,12 @@ export default function ProfileScreen() {
         </Dialog>
       </Portal>
 
+      {/* Dialog para seleccionar tema */}
+      <ThemeSelector
+        showDialog={showThemeDialog}
+        onDialogDismiss={() => setShowThemeDialog(false)}
+      />
+
       <Snackbar
         visible={showSnackbar}
         onDismiss={() => setShowSnackbar(false)}
@@ -421,8 +483,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   userSubtitle: {
-    marginBottom: 16,
+    marginBottom: 12,
     opacity: 0.8,
+  },
+  themeChip: {
+    marginBottom: 16,
   },
   editButton: {
     borderRadius: 20,
@@ -461,6 +526,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     minWidth: "45%",
+  },
+  settingItem: {
+    borderRadius: 8,
+    marginVertical: 2,
+  },
+  themeControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  quickToggleButton: {
+    borderRadius: 16,
   },
   bottomSpacing: {
     height: 32,
