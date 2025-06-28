@@ -732,6 +732,8 @@ export default function FruitDetailsScreen() {
           onPress: handleRefreshPress,
           accessibilityLabel: "Actualizar información",
         }}
+        enableBlur
+        blurIntensity={20}
       />
 
       <ScrollView
@@ -789,6 +791,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 32,
+    paddingTop: 64,
   },
 
   // Fruit header styles

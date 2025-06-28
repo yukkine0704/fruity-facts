@@ -1,5 +1,7 @@
 import { useTheme } from "@/contexts/ThemeContext";
+import { hexToRgba } from "@/utils/hexConverter";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import React from "react";
 import {
   Pressable,
@@ -7,16 +9,16 @@ import {
   StyleSheet,
   Text,
   TextStyle,
-  View,
   ViewStyle,
 } from "react-native";
 import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Definimos los tipos para las props
 interface AppHeaderProps {
   title?: string;
   leftAction?: {
-    icon: keyof typeof MaterialCommunityIcons.glyphMap; // Permite cualquier icono de MaterialCommunityIcons
+    icon: keyof typeof MaterialCommunityIcons.glyphMap;
     onPress: () => void;
     accessibilityLabel?: string;
   };
@@ -25,8 +27,10 @@ interface AppHeaderProps {
     onPress: () => void;
     accessibilityLabel?: string;
   };
-  containerStyle?: StyleProp<ViewStyle>; // Para estilos adicionales en el contenedor
-  titleStyle?: StyleProp<TextStyle>; // Para estilos adicionales en el título
+  containerStyle?: StyleProp<ViewStyle>;
+  titleStyle?: StyleProp<TextStyle>;
+  blurIntensity?: number;
+  enableBlur?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -37,25 +41,23 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   rightAction,
   containerStyle,
   titleStyle,
+  blurIntensity = 20,
+  enableBlur = true,
 }) => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const AnimatedText = Animated.createAnimatedComponent(Text);
 
-  return (
-    <Animated.View
-      style={[
-        styles.headerContainer,
-        {
-          backgroundColor: theme.colors.surface, // Color de fondo del header
-          borderBottomColor: theme.colors.outlineVariant, // Borde sutil en la parte inferior
-        },
-        containerStyle, // Aplica estilos personalizados si se proporcionan
-      ]}
-      entering={FadeIn.delay(100).duration(500)} // Animación de entrada suave
-      layout={Layout.springify()} // Animación de layout para cambios de tamaño o posición
-    >
+  // Determinar el tint del blur basado en el tema
+  const blurTint = theme.dark ? "dark" : "light";
+
+  // Color de fondo semi-transparente para el blur
+  const blurBackgroundColor = hexToRgba(theme.colors.surface, 0.8);
+
+  const HeaderContent = () => (
+    <>
       {/* Sección izquierda (acción opcional) */}
-      <View style={styles.actionContainer}>
+      <Animated.View style={styles.actionContainer}>
         {leftAction && (
           <AnimatedPressable
             onPress={leftAction.onPress}
@@ -64,42 +66,42 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             }
             style={({ pressed }) => [
               styles.iconButton,
-              { opacity: pressed ? 0.6 : 1 }, // Efecto de press
+              { opacity: pressed ? 0.6 : 1 },
             ]}
-            entering={FadeIn} // Animación de entrada si aparece el botón
-            exiting={FadeOut} // Animación de salida si desaparece
+            entering={FadeIn}
+            exiting={FadeOut}
           >
             <MaterialCommunityIcons
               name={leftAction.icon}
               size={24}
-              color={theme.colors.onSurface} // Color del icono
+              color={theme.colors.onSurface}
             />
           </AnimatedPressable>
         )}
-      </View>
+      </Animated.View>
 
       {/* Título central (opcional) */}
-      <View style={styles.titleContainer}>
+      <Animated.View style={styles.titleContainer}>
         {title && (
           <AnimatedText
             numberOfLines={1}
             ellipsizeMode="tail"
             style={[
               styles.title,
-              { color: theme.colors.onSurface }, // Color del título
-              titleStyle, // Aplica estilos personalizados al título
+              { color: theme.colors.onSurface },
+              titleStyle,
             ]}
-            entering={FadeIn} // Animación de entrada
-            exiting={FadeOut} // Animación de salida
+            entering={FadeIn}
+            exiting={FadeOut}
             layout={Layout.springify()}
           >
             {title}
           </AnimatedText>
         )}
-      </View>
+      </Animated.View>
 
       {/* Sección derecha (acción opcional) */}
-      <View style={styles.actionContainer}>
+      <Animated.View style={styles.actionContainer}>
         {rightAction && (
           <AnimatedPressable
             onPress={rightAction.onPress}
@@ -108,57 +110,142 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             }
             style={({ pressed }) => [
               styles.iconButton,
-              { opacity: pressed ? 0.6 : 1 }, // Efecto de press
+              { opacity: pressed ? 0.6 : 1 },
             ]}
-            entering={FadeIn} // Animación de entrada
-            exiting={FadeOut} // Animación de salida
+            entering={FadeIn}
+            exiting={FadeOut}
           >
             <MaterialCommunityIcons
               name={rightAction.icon}
               size={24}
-              color={theme.colors.onSurface} // Color del icono
+              color={theme.colors.onSurface}
             />
           </AnimatedPressable>
         )}
-      </View>
+      </Animated.View>
+    </>
+  );
+
+  if (enableBlur) {
+    return (
+      <Animated.View
+        style={[
+          styles.headerContainer,
+          {
+            paddingTop: insets.top,
+            height: 64 + insets.top,
+          },
+          containerStyle,
+        ]}
+        entering={FadeIn.delay(100).duration(500)}
+        layout={Layout.springify()}
+      >
+        <BlurView
+          intensity={blurIntensity}
+          tint={blurTint}
+          style={[
+            styles.blurBackground,
+            {
+              backgroundColor: blurBackgroundColor,
+            },
+          ]}
+          experimentalBlurMethod="dimezisBlurView"
+        >
+          <Animated.View
+            style={[
+              styles.headerContent,
+              {
+                paddingTop: insets.top > 0 ? 8 : 12,
+                paddingBottom: 12,
+              },
+            ]}
+          >
+            <HeaderContent />
+          </Animated.View>
+        </BlurView>
+      </Animated.View>
+    );
+  }
+
+  // Fallback sin blur (comportamiento original)
+  return (
+    <Animated.View
+      style={[
+        styles.headerContainer,
+        styles.solidBackground,
+        {
+          backgroundColor: theme.colors.surface,
+          borderBottomColor: theme.colors.outlineVariant,
+          paddingTop: insets.top,
+          height: 64 + insets.top,
+        },
+        containerStyle,
+      ]}
+      entering={FadeIn.delay(100).duration(500)}
+      layout={Layout.springify()}
+    >
+      <Animated.View
+        style={[
+          styles.headerContent,
+          {
+            paddingTop: insets.top > 0 ? 8 : 12,
+            paddingBottom: 12,
+          },
+        ]}
+      >
+        <HeaderContent />
+      </Animated.View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   headerContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    // Sombra para el header
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  solidBackground: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  blurBackground: {
+    flex: 1,
+    overflow: "hidden",
+  },
+  headerContent: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12, // Espaciado vertical adecuado para Material Design
-    height: 64, // Altura estándar de un AppBar en Material Design
-    borderBottomWidth: StyleSheet.hairlineWidth, // Borde fino en la parte inferior
-    // La sombra (elevation) se puede añadir si lo deseas, pero los headers de Material Design 3 suelen ser flat por defecto.
-    // Para sombra:
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 3,
-    // elevation: 2,
   },
   actionContainer: {
-    width: 48, // Un tamaño fijo para los contenedores de acción (para alineación)
+    width: 48,
     height: 48,
     justifyContent: "center",
     alignItems: "center",
   },
   iconButton: {
-    padding: 8, // Área de toque más grande para el icono
-    borderRadius: 24, // Para un efecto de círculo al presionar
+    padding: 8,
+    borderRadius: 24,
   },
   titleContainer: {
-    flex: 1, // Permite que el título ocupe el espacio restante
-    alignItems: "center", // Centra el título horizontalmente
+    flex: 1,
+    alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 8, // Margen para que no toque los botones
+    marginHorizontal: 8,
   },
   title: {
-    textAlign: "center", // Asegura que el texto esté centrado si hay varias líneas
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "600",
   },
 });
