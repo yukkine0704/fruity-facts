@@ -1,12 +1,11 @@
 import { useTheme } from "@/contexts/ThemeContext";
 import { AbridgedFoodNutrient, FoodItem, FoodNutrient } from "@/types/fdc";
-import { MaterialCommunityIcons } from "@expo/vector-icons"; // Importamos MaterialCommunityIcons
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Chip, Divider, Surface, Text } from "react-native-paper";
 import Animated, { FadeIn, Layout } from "react-native-reanimated";
 
-// Usamos Animated.createAnimatedComponent para los componentes de Paper si es necesario animarlos directamente
 const AnimatedSurface = Animated.createAnimatedComponent(Surface);
 const AnimatedText = Animated.createAnimatedComponent(Text);
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -20,7 +19,6 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  // Helper function para verificar si un nutriente es del tipo FoodNutrient
   const isFoodNutrient = (
     nutrient: AbridgedFoodNutrient | FoodNutrient
   ): nutrient is FoodNutrient => {
@@ -41,7 +39,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
     }
 
     if (amount === 0) return "0";
-    if (amount < 0.01 && amount > 0) return "<0.01"; // Mejorado para pequeños valores
+    if (amount < 0.01 && amount > 0) return "<0.01";
 
     return `${amount.toFixed(2)} ${unit}`;
   };
@@ -60,30 +58,30 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
     if (!food.foodNutrients) return [];
 
     const mainNutrientNames = [
-      { name: "Energy", icon: "flash", color: theme.colors.error }, // Cambiado a 'flash'
+      { name: "Energy", icon: "flash", color: theme.colors.error },
       {
         name: "Protein",
-        icon: "food-steak", // Cambiado a 'food-steak'
+        icon: "food-steak",
         color: theme.colors.primary,
       },
       {
         name: "Total lipid (fat)",
-        icon: "oil", // Cambiado a 'oil'
+        icon: "oil",
         color: theme.colors.tertiary,
       },
       {
         name: "Carbohydrate, by difference",
-        icon: "bread-slice", // Cambiado a 'bread-slice'
+        icon: "bread-slice",
         color: theme.colors.secondary,
       },
       {
         name: "Fiber, total dietary",
-        icon: "fruit-cherries", // Cambiado a 'fruit-cherries'
+        icon: "fruit-cherries",
         color: theme.colors.primary,
       },
       {
         name: "Sugars, total including NLEA",
-        icon: "candycane", // Cambiado a 'candycane'
+        icon: "candycane",
         color: theme.colors.error,
       },
     ];
@@ -109,7 +107,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
       .filter(
         (n): n is NonNullable<typeof n> =>
           n !== null && n.amount !== undefined && n.amount !== 0
-      ); // Filtrar nutrientes con cantidad 0
+      );
   };
 
   const getVitaminsAndMinerals = () => {
@@ -118,15 +116,15 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
     const vitaminsAndMinerals = [
       "Vitamin C",
       "Vitamin A",
-      "Vitamin D", // Agregado
-      "Vitamin E", // Agregado
+      "Vitamin D",
+      "Vitamin E",
       "Vitamin K",
-      "Thiamin", // B1
-      "Riboflavin", // B2
-      "Niacin", // B3
-      "Vitamin B-6", // B6
-      "Folate", // B9
-      "Vitamin B-12", // B12
+      "Thiamin",
+      "Riboflavin",
+      "Niacin",
+      "Vitamin B-6",
+      "Folate",
+      "Vitamin B-12",
       "Calcium, Ca",
       "Iron, Fe",
       "Magnesium, Mg",
@@ -134,9 +132,9 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
       "Potassium, K",
       "Sodium, Na",
       "Zinc, Zn",
-      "Copper, Cu", // Agregado
-      "Manganese, Mn", // Agregado
-      "Selenium, Se", // Agregado
+      "Copper, Cu",
+      "Manganese, Mn",
+      "Selenium, Se",
     ];
 
     return food.foodNutrients
@@ -146,15 +144,14 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
           vitaminsAndMinerals.some((vm) => nutrientName.includes(vm)) &&
           nutrient.amount !== undefined &&
           nutrient.amount !== 0
-        ); // Filtrar nutrientes con cantidad 0
+        );
       })
       .sort((a, b) => {
-        // Ordenar alfabéticamente por nombre de nutriente para mejor presentación
         const nameA = getNutrientName(a).split(",")[0];
         const nameB = getNutrientName(b).split(",")[0];
         return nameA.localeCompare(nameB);
       })
-      .slice(0, 15); // Mostrar hasta 15 vitaminas/minerales
+      .slice(0, 15);
   };
 
   const mainNutrients = getMainNutrients();
@@ -163,28 +160,36 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
   return (
     <AnimatedView
       style={styles.container}
-      entering={FadeIn.delay(200).duration(800)} // Animación de entrada para todo el contenedor
-      layout={Layout.springify()} // Animación de layout para los cambios
+      entering={FadeIn.delay(200).duration(800)}
+      layout={Layout.springify()}
     >
       {/* Información básica del alimento */}
       <AnimatedSurface
         style={[
           styles.card,
-          { backgroundColor: theme.colors.surfaceContainerHigh }, // Color de superficie más destacado
+          { backgroundColor: theme.colors.surfaceContainerHigh },
+          // Sombra más sutil y Material-ish
+          {
+            shadowColor: theme.colors.shadow, // Usar el color de sombra del tema
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2, // Opacidad reducida
+            shadowRadius: 3,
+            elevation: theme.dark ? 4 : 5,
+          },
         ]}
-        elevation={theme.dark ? 4 : 5} // Mayor elevación para Material 3
+        // Ya no necesitamos la prop `elevation` directa aquí, la manejamos en el estilo
         entering={FadeIn.delay(300).duration(600)}
         layout={Layout.springify()}
       >
         <View style={styles.cardHeader}>
-          <MaterialCommunityIcons // Usamos MaterialCommunityIcons
-            name="food-apple-outline" // Icono genérico para alimento
-            size={28} // Tamaño un poco más grande
+          <MaterialCommunityIcons
+            name="food-apple-outline"
+            size={28}
             color={theme.colors.primary}
-            style={styles.cardHeaderIcon} // Nuevo estilo para el icono del encabezado
+            style={styles.cardHeaderIcon}
           />
           <Text
-            variant="titleLarge" // Más prominente
+            variant="titleLarge"
             style={{ color: theme.colors.onSurface, marginLeft: 12 }}
           >
             Información del Producto
@@ -192,7 +197,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
         </View>
 
         <Text
-          variant="headlineSmall" // Más grande para la descripción principal
+          variant="headlineSmall"
           style={{ color: theme.colors.onSurface, marginBottom: 12 }}
         >
           {String(food.description || "Sin descripción")}
@@ -201,7 +206,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
         <View style={styles.chipContainer}>
           <Chip
             compact
-            mode="flat" // Usamos modo flat para Material 3
+            mode="flat"
             style={{ backgroundColor: theme.colors.primaryContainer }}
             textStyle={{ color: theme.colors.onPrimaryContainer }}
             icon={() => (
@@ -290,15 +295,22 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
         <AnimatedSurface
           style={[
             styles.card,
-            { backgroundColor: theme.colors.surfaceContainer }, // Otro color de superficie
+            { backgroundColor: theme.colors.surfaceContainer },
+            {
+              shadowColor: theme.colors.shadow,
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.15,
+              shadowRadius: 2,
+              elevation: theme.dark ? 2 : 4,
+            },
           ]}
-          elevation={theme.dark ? 2 : 4} // Menor elevación
+          // Ya no necesitamos la prop `elevation` directa aquí
           entering={FadeIn.delay(400).duration(600)}
           layout={Layout.springify()}
         >
           <View style={styles.cardHeader}>
             <MaterialCommunityIcons
-              name="nutrition" // Icono de Material 3 para nutrición
+              name="nutrition"
               size={28}
               color={theme.colors.secondary}
               style={styles.cardHeaderIcon}
@@ -314,19 +326,19 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
             <AnimatedView
               key={index}
               style={styles.nutrientRow}
-              entering={FadeIn.delay(450 + index * 50).duration(500)} // Animación escalonada
+              entering={FadeIn.delay(450 + index * 50).duration(500)}
               layout={Layout.springify()}
             >
               <View style={styles.nutrientInfo}>
                 <MaterialCommunityIcons
                   name={nutrient.icon as any}
-                  size={24} // Iconos más grandes
+                  size={24}
                   color={nutrient.color}
                   style={styles.nutrientIcon}
                 />
                 <View style={styles.nutrientText}>
                   <Text
-                    variant="bodyLarge" // Texto de nutriente principal más grande
+                    variant="bodyLarge"
                     style={{ color: theme.colors.onSurface }}
                   >
                     {nutrient.displayName}
@@ -340,7 +352,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
                 </View>
               </View>
               <Text
-                variant="titleMedium" // Valor más grande
+                variant="titleMedium"
                 style={{ color: theme.colors.primary }}
               >
                 {renderNutrientValue(nutrient)}
@@ -363,15 +375,22 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
         <AnimatedSurface
           style={[
             styles.card,
-            { backgroundColor: theme.colors.surfaceContainerLow }, // Otro color de superficie
+            { backgroundColor: theme.colors.surfaceContainerLow },
+            {
+              shadowColor: theme.colors.shadow,
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 1.5,
+              elevation: theme.dark ? 1 : 2,
+            },
           ]}
-          elevation={theme.dark ? 1 : 2} // Menor elevación
+          // Ya no necesitamos la prop `elevation` directa aquí
           entering={FadeIn.delay(500).duration(600)}
           layout={Layout.springify()}
         >
           <View style={styles.cardHeader}>
             <MaterialCommunityIcons
-              name="pill" // Icono para vitaminas/minerales
+              name="pill"
               size={28}
               color={theme.colors.tertiary}
               style={styles.cardHeaderIcon}
@@ -390,9 +409,9 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
                 key={index}
                 style={[
                   styles.vitaminItem,
-                  { backgroundColor: theme.colors.surfaceVariant }, // Color de fondo para items
+                  { backgroundColor: theme.colors.surfaceVariant },
                 ]}
-                entering={FadeIn.delay(550 + index * 30).duration(400)} // Animación escalonada más rápida
+                entering={FadeIn.delay(550 + index * 30).duration(400)}
                 layout={Layout.springify()}
               >
                 <Text
@@ -400,7 +419,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
                   style={{
                     color: theme.colors.onSurfaceVariant,
                     fontWeight: "bold",
-                    textAlign: "center", // Centrar el texto
+                    textAlign: "center",
                   }}
                 >
                   {getNutrientName(nutrient).split(",")[0]}
@@ -409,7 +428,7 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
                   variant="bodySmall"
                   style={{
                     color: theme.colors.primary,
-                    textAlign: "center", // Centrar el valor
+                    textAlign: "center",
                     marginTop: 4,
                   }}
                 >
@@ -421,62 +440,36 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
         </AnimatedSurface>
       )}
 
-      {/* Información adicional si está disponible */}
-      {"publicationDate" in food && food.publicationDate && (
-        <AnimatedSurface
-          style={[
-            styles.card,
-            { backgroundColor: theme.colors.surfaceDisabled }, // Un color más discreto para info extra
-          ]}
-          elevation={theme.dark ? 0 : 1}
-          entering={FadeIn.delay(600).duration(500)}
-          layout={Layout.springify()}
-        >
-          <View style={styles.cardHeader}>
-            <MaterialCommunityIcons
-              name="calendar-month-outline" // Icono de calendario
-              size={22}
-              color={theme.colors.outline}
-              style={styles.cardHeaderIcon}
-            />
-            <Text
-              variant="bodyLarge"
-              style={{ color: theme.colors.onSurfaceVariant, marginLeft: 12 }}
-            >
-              Fecha de publicación:
-              {new Date(food.publicationDate).toLocaleDateString("es-ES", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </Text>
-          </View>
-        </AnimatedSurface>
-      )}
-
       {/* Disclaimer */}
       <AnimatedSurface
         style={[
           styles.disclaimerCard,
           { backgroundColor: theme.colors.secondaryContainer },
+          {
+            shadowColor: theme.colors.shadow,
+            shadowOffset: { width: 0, height: 0.5 },
+            shadowOpacity: 0.05,
+            shadowRadius: 1,
+            elevation: theme.dark ? 0 : 1,
+          },
         ]}
-        elevation={theme.dark ? 0 : 1}
+        // Ya no necesitamos la prop `elevation` directa aquí
         entering={FadeIn.delay(700).duration(500)}
         layout={Layout.springify()}
       >
         <MaterialCommunityIcons
-          name="information-outline" // Icono de información
-          size={24} // Más grande
+          name="information-outline"
+          size={24}
           color={theme.colors.onSecondaryContainer}
-          style={styles.disclaimerIcon} // Nuevo estilo para el icono del disclaimer
+          style={styles.disclaimerIcon}
         />
         <Text
           variant="bodySmall"
           style={{
             color: theme.colors.onSecondaryContainer,
-            marginLeft: 12, // Más margen
+            marginLeft: 12,
             flex: 1,
-            lineHeight: 20, // Mejorar legibilidad
+            lineHeight: 20,
           }}
         >
           Los valores nutricionales son proporcionados por la base de datos de
@@ -491,47 +484,47 @@ export const NutritionDetailsCard: React.FC<NutritionDetailsCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 20, // Más espacio entre las tarjetas
+    gap: 16, // Reducir un poco el espacio entre tarjetas para un look más compacto pero aún legible
     padding: 16,
   },
   card: {
-    padding: 20, // Más padding dentro de la tarjeta
-    borderRadius: 16, // Más redondeado
-    // Elevated style para Material 3 se maneja con la prop `elevation` de Surface
+    padding: 18, // Ligeramente menos padding para un look más esbelto
+    borderRadius: 12, // Mantener el redondeado para un aspecto moderno
+    // La elevación (shadow) se maneja ahora directamente en el estilo del componente AnimatedSurface
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20, // Más margen abajo
+    marginBottom: 16, // Ligeramente menos margen abajo
   },
   cardHeaderIcon: {
-    marginRight: 8, // Margen a la derecha del icono del header
+    marginRight: 10, // Margen a la derecha del icono del header
   },
   chipContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10, // Más espacio entre chips
+    gap: 8, // Ligeramente menos espacio entre chips para compacidad
     marginTop: 8,
-    marginBottom: 16, // Añadir margen inferior
+    marginBottom: 12, // Añadir margen inferior
   },
   ingredientsSection: {
-    marginTop: 20, // Más margen
-    paddingTop: 20, // Más padding
-    borderTopWidth: StyleSheet.hairlineWidth, // Línea más fina
+    marginTop: 18, // Margen ajustado
+    paddingTop: 18, // Padding ajustado
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   servingSection: {
-    marginTop: 20,
-    padding: 16, // Más padding
-    borderRadius: 12, // Más redondeado
-    alignItems: "center", // Centrar texto
+    marginTop: 18,
+    padding: 14, // Ligeramente menos padding
+    borderRadius: 10, // Ligeramente menos redondeado
+    alignItems: "center",
     justifyContent: "center",
   },
   nutrientRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12, // Más padding vertical
-    position: "relative", // Para el divisor absoluto
+    paddingVertical: 10, // Ligeramente menos padding vertical
+    position: "relative",
   },
   nutrientInfo: {
     flexDirection: "row",
@@ -539,7 +532,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   nutrientIcon: {
-    marginRight: 16, // Más margen
+    marginRight: 12, // Ligeramente menos margen
   },
   nutrientText: {
     flex: 1,
@@ -549,29 +542,29 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: StyleSheet.hairlineWidth, // Divisor fino
-    marginHorizontal: 0, // Asegura que ocupe todo el ancho
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 0,
   },
   vitaminsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between", // Distribuir uniformemente
-    gap: 12, // Espacio entre los elementos
+    justifyContent: "space-between",
+    gap: 10, // Ligeramente menos espacio entre los elementos
   },
   vitaminItem: {
     width: "48%", // Ajustar para 2 columnas con espacio
-    padding: 12, // Más padding
-    borderRadius: 10, // Más redondeado
+    padding: 10, // Ligeramente menos padding
+    borderRadius: 8, // Ligeramente menos redondeado
     alignItems: "center",
     justifyContent: "center",
   },
   disclaimerCard: {
-    padding: 16, // Más padding
-    borderRadius: 12, // Más redondeado
+    padding: 14, // Ligeramente menos padding
+    borderRadius: 10, // Ligeramente menos redondeado
     flexDirection: "row",
     alignItems: "flex-start",
   },
   disclaimerIcon: {
-    marginTop: 2, // Ajustar posición del icono
+    marginTop: 2,
   },
 });

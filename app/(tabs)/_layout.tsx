@@ -1,12 +1,14 @@
 import { useTheme } from "@/contexts/ThemeContext";
+import { hexToRgba } from "@/utils/hexConverter";
+import { BlurView } from "expo-blur";
 import React from "react";
-import { Pressable, StatusBar, StyleSheet, View } from "react-native";
-import { BottomNavigation, IconButton, Text } from "react-native-paper";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { IconButton, Text } from "react-native-paper";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
-  withTiming,
+  withSpring, // Asegúrate de que withSpring esté importado
+  withTiming, // Asegúrate de que withTiming esté importado
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -30,6 +32,12 @@ export default function TabLayout() {
   // Animaciones
   const dockScale = useSharedValue(1);
   const dockOpacity = useSharedValue(1);
+
+  const translateY = useSharedValue(0);
+  const lastScrollY = useSharedValue(0);
+  // Altura de la barra. Ajusta este valor si tu barra es más alta o más baja.
+  // Es importante que sea precisa para la animación de ocultar.
+  const BAR_HEIGHT = 90 + insets.bottom;
 
   const routes = [
     {
@@ -74,7 +82,8 @@ export default function TabLayout() {
   }, []);
 
   React.useEffect(() => {
-    // Animación de entrada del dock
+    // Animación de entrada inicial del dock.
+    // Usamos withSpring aquí también para que al cargar la app, la barra "rebote" un poco.
     dockScale.value = withSpring(1, { damping: 15, stiffness: 100 });
     dockOpacity.value = withTiming(1, { duration: 300 });
   }, []);
@@ -91,78 +100,139 @@ export default function TabLayout() {
 
   const dockAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: dockScale.value }],
+      transform: [{ scale: dockScale.value }, { translateY: translateY.value }],
       opacity: dockOpacity.value,
     };
   });
 
+  // MODIFICADO: Función para manejar el evento de scroll con animación bouncy
+  const handleScroll = React.useCallback(
+    (event: any) => {
+      const currentScrollY = event.nativeEvent.contentOffset.y;
+      const scrollDelta = currentScrollY - lastScrollY.value;
+
+      // Umbral de scroll para activar la ocultación
+      const SCROLL_THRESHOLD = 20; // Cuántos píxeles debe desplazarse antes de ocultar/mostrar
+
+      // Ocultar barra (scroll hacia abajo)
+      if (scrollDelta > SCROLL_THRESHOLD && currentScrollY > BAR_HEIGHT) {
+        translateY.value = withTiming(BAR_HEIGHT + insets.bottom + 16, {
+          duration: 200,
+        });
+      }
+      // Mostrar barra (scroll hacia arriba o al llegar al principio)
+      else if (
+        scrollDelta < -SCROLL_THRESHOLD ||
+        currentScrollY <= BAR_HEIGHT
+      ) {
+        translateY.value = withSpring(0, {
+          damping: 18, // Ajusta este valor para más o menos rebote
+          stiffness: 120, // Ajusta este valor para la "rigidez" del rebote
+          // Puedes agregar overshootClamping: true si quieres evitar que el rebote se extienda más allá del valor final.
+          // Pero para un efecto "expressive", a veces un ligero overshoot es deseable.
+        });
+      }
+
+      lastScrollY.value = currentScrollY;
+    },
+    [BAR_HEIGHT, insets.bottom]
+  );
+
   const CustomTabBar = () => {
+    const { theme } = useTheme();
+    const insets = useSafeAreaInsets();
+
+    const blurBackgroundColor = hexToRgba(theme.colors.surface, 0.7);
+
     return (
-      <Animated.View style={[styles.dockContainer, dockAnimatedStyle]}>
-        <View style={styles.solidDock}>
-          {routes.map((route, tabIndex) => {
-            const isActive = index === tabIndex;
-            const tabScale = useSharedValue(1);
+      <Animated.View
+        style={[
+          styles.dockContainer,
+          dockAnimatedStyle,
+          {
+            shadowColor: theme.dark
+              ? theme.colors.surface
+              : theme.colors.primary,
+          },
+        ]}
+      >
+        <BlurView
+          intensity={20}
+          tint={theme.dark ? "dark" : "light"}
+          style={[
+            styles.blurDockBackground,
+            {
+              backgroundColor: blurBackgroundColor,
+              borderColor: theme.colors.outline,
+            },
+          ]}
+          experimentalBlurMethod="dimezisBlurView"
+        >
+          <View style={styles.solidDockContent}>
+            {routes.map((route, tabIndex) => {
+              const isActive = index === tabIndex;
+              const tabScale = useSharedValue(1);
 
-            const tabAnimatedStyle = useAnimatedStyle(() => {
-              return {
-                transform: [{ scale: tabScale.value }],
-              };
-            });
+              const tabAnimatedStyle = useAnimatedStyle(() => {
+                return {
+                  transform: [{ scale: tabScale.value }],
+                };
+              });
 
-            return (
-              <AnimatedPressable
-                key={route.key}
-                style={[styles.tabItem, tabAnimatedStyle]}
-                onPress={() => handleTabPress(tabIndex)}
-                onPressIn={() => {
-                  tabScale.value = withSpring(0.9, {
-                    damping: 15,
-                    stiffness: 200,
-                  });
-                }}
-                onPressOut={() => {
-                  tabScale.value = withSpring(1, {
-                    damping: 15,
-                    stiffness: 200,
-                  });
-                }}
-              >
-                <View
-                  style={[
-                    styles.tabIconContainer,
-                    isActive && {
-                      backgroundColor: theme.colors.primaryContainer,
-                    },
-                  ]}
+              return (
+                <AnimatedPressable
+                  key={route.key}
+                  style={[styles.tabItem, tabAnimatedStyle]}
+                  onPress={() => handleTabPress(tabIndex)}
+                  onPressIn={() => {
+                    tabScale.value = withSpring(0.9, {
+                      damping: 15,
+                      stiffness: 200,
+                    });
+                  }}
+                  onPressOut={() => {
+                    tabScale.value = withSpring(1, {
+                      damping: 15,
+                      stiffness: 200,
+                    });
+                  }}
                 >
-                  <IconButton
-                    icon={isActive ? route.focusedIcon : route.unfocusedIcon}
-                    size={24}
-                    iconColor={
-                      isActive
-                        ? theme.colors.onPrimaryContainer
-                        : theme.colors.onSurfaceVariant
-                    }
-                    style={{ margin: 0 }}
-                  />
-                </View>
-                {isActive && (
-                  <Text
-                    variant="labelSmall"
-                    style={{
-                      color: theme.colors.primary,
-                      fontWeight: "600",
-                      marginTop: 2,
-                    }}
+                  <View
+                    style={[
+                      styles.tabIconContainer,
+                      isActive && {
+                        backgroundColor: theme.colors.primaryContainer,
+                      },
+                    ]}
                   >
-                    {route.title}
-                  </Text>
-                )}
-              </AnimatedPressable>
-            );
-          })}
-        </View>
+                    <IconButton
+                      icon={isActive ? route.focusedIcon : route.unfocusedIcon}
+                      size={24}
+                      iconColor={
+                        isActive
+                          ? theme.colors.onPrimaryContainer
+                          : theme.colors.onSurfaceVariant
+                      }
+                      style={{ margin: 0 }}
+                    />
+                  </View>
+                  {isActive && (
+                    <Text
+                      variant="labelSmall"
+                      style={{
+                        color: theme.colors.primary,
+                        fontWeight: "600",
+                        marginTop: 2,
+                      }}
+                    >
+                      {route.title}
+                    </Text>
+                  )}
+                </AnimatedPressable>
+              );
+            })}
+          </View>
+        </BlurView>
       </Animated.View>
     );
   };
@@ -177,7 +247,7 @@ export default function TabLayout() {
         content: {
           flex: 1,
           backgroundColor: theme.colors.background,
-          paddingBottom: 0,
+          paddingBottom: BAR_HEIGHT + 16,
         },
         dockContainer: {
           position: "absolute",
@@ -185,15 +255,24 @@ export default function TabLayout() {
           left: 16,
           right: 16,
           alignItems: "center",
-          shadowColor: theme.colors.primary,
-          shadowOffset: {
-            width: 0,
-            height: 8,
-          },
-          shadowOpacity: 0.4,
-          shadowRadius: 15,
-          elevation: 10,
-          zIndex: 1000,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 5,
+        },
+        blurDockBackground: {
+          width: "100%",
+          borderRadius: 28,
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: theme.colors.outline,
+          paddingHorizontal: 8,
+          paddingVertical: 12,
+        },
+        solidDockContent: {
+          flexDirection: "row",
+          flex: 1,
         },
         solidDock: {
           flexDirection: "row",
@@ -202,7 +281,7 @@ export default function TabLayout() {
           borderRadius: 28,
           borderWidth: 1,
           borderColor: theme.colors.outline + "15",
-          backgroundColor: theme.colors.surface,
+          backgroundColor: hexToRgba(theme.colors.surface, 0.75),
           overflow: "hidden",
           flex: 1,
         },
@@ -228,25 +307,20 @@ export default function TabLayout() {
           backgroundColor: "transparent",
         },
       }),
-    [theme, insets]
+    [theme, insets, BAR_HEIGHT]
   );
 
   return (
     <View style={styles.container}>
-      <StatusBar
-        barStyle={theme.dark ? "light-content" : "dark-content"}
-        backgroundColor="transparent"
-        translucent={true}
-      />
-      <View style={styles.content}>
-        <BottomNavigation
-          navigationState={{ index, routes }}
-          onIndexChange={setIndex}
-          renderScene={renderScene}
-          barStyle={styles.hiddenTabBar}
-          style={styles.bottomNavigation}
-        />
-      </View>
+      <ScrollView
+        style={styles.content}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: BAR_HEIGHT + 16 }}
+      >
+        {renderScene({ route: routes[index] })}
+      </ScrollView>
+
       <CustomTabBar />
     </View>
   );

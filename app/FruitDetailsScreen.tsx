@@ -9,7 +9,6 @@ import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
-  Appbar,
   Button,
   Card,
   Chip,
@@ -672,28 +671,6 @@ export default function FruitDetailsScreen() {
     }
   };
 
-  const getAppBarSubtitle = () => {
-    const subtitle = (() => {
-      switch (searchStage) {
-        case "searching":
-          return "Buscando...";
-        case "results":
-          return "Resultados encontrados";
-        case "loading-details":
-          return "Cargando detalles...";
-        case "completed":
-          return "Información completa";
-        case "error":
-          return "Error";
-        default:
-          return "";
-      }
-    })();
-
-    devLog("AppBar subtitle updated", { searchStage, subtitle });
-    return subtitle;
-  };
-
   const handleBackPress = () => {
     devLog("Back button pressed");
     navigation.goBack();
@@ -738,21 +715,6 @@ export default function FruitDetailsScreen() {
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <Appbar.Header style={{ backgroundColor: theme.colors.surface }}>
-        <Appbar.BackAction onPress={handleBackPress} />
-        <Appbar.Content
-          title={fruitName || "Cargando..."}
-          subtitle={getAppBarSubtitle()}
-          titleStyle={{ color: theme.colors.onSurface }}
-          subtitleStyle={{ color: theme.colors.outline }}
-        />
-        <Appbar.Action
-          icon="refresh"
-          onPress={handleRefreshPress}
-          disabled={isSearching || isLoadingFood}
-        />
-      </Appbar.Header>
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}

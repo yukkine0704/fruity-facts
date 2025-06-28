@@ -1,11 +1,14 @@
+import { AppSnackbar } from "@/components/AppSnackBar";
 import { FruitCard } from "@/components/FruitCard";
 import { FruitCardSkeleton } from "@/components/FruitCardSkeleton";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useFruitStore } from "@/stores/fruitStore";
 import { Fruit } from "@/types/fruit";
+import { hexToRgba } from "@/utils/hexConverter";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
@@ -24,7 +27,6 @@ import {
   List,
   Menu,
   Searchbar,
-  Snackbar,
   Surface,
   Text,
 } from "react-native-paper";
@@ -286,10 +288,21 @@ export default function ExploreScreen() {
     <Surface
       style={[
         styles.searchSection,
-        { backgroundColor: theme.colors.surfaceContainerHigh },
+        {
+          backgroundColor: hexToRgba(
+            theme.colors.surfaceContainerHigh || "",
+            0.55
+          ),
+          elevation: 0,
+        },
       ]}
-      elevation={theme.dark ? 4 : 5}
     >
+      <BlurView
+        intensity={20}
+        experimentalBlurMethod="dimezisBlurView"
+        tint={theme.dark ? "dark" : "light"}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={styles.searchContainer}>
         <Searchbar
           placeholder="Buscar frutas localmente..."
@@ -298,7 +311,11 @@ export default function ExploreScreen() {
           onSubmitEditing={handleSearch}
           style={[
             styles.searchbar,
-            { backgroundColor: theme.colors.surfaceVariant },
+            {
+              backgroundColor: theme.colors.surfaceVariant,
+              // Reducimos la elevación del Searchbar para un look más plano dentro del Surface blureado
+              elevation: 0,
+            },
           ]}
           inputStyle={{ color: theme.colors.onSurface }}
           iconColor={theme.colors.onSurfaceVariant}
@@ -537,6 +554,7 @@ export default function ExploreScreen() {
 
   const renderSkeletons = () => (
     <View style={styles.skeletonContainer}>
+      {/* Asegúrate de que FruitCardSkeleton acepte y use el prop 'index' si es necesario para animaciones o diferencias */}
       {Array.from({ length: 6 }, (_, index) => (
         <FruitCardSkeleton key={`skeleton-${index}`} index={index} />
       ))}
@@ -686,35 +704,33 @@ export default function ExploreScreen() {
         scrollEventThrottle={400}
       >
         {renderHeader()}
-        {renderSearchSection()}
+        <View>{renderSearchSection()}</View>
         {renderContent()}
 
-        <View style={styles.bottomSpacing} />
+        {/* El espaciado inferior ahora se manejará con el padding del scrollContent */}
       </ScrollView>
 
       <FAB
         icon="filter-variant"
         label="Filtrar"
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        style={[
+          styles.fab,
+          {
+            backgroundColor: theme.colors.primary,
+            // Ajuste de posición para que el FAB no quede tan pegado y pueda flotar mejor
+            bottom: 30,
+            right: 20,
+          },
+        ]}
         onPress={handleAdvancedSearch}
         color={theme.colors.onPrimary}
       />
 
-      <Snackbar
+      <AppSnackbar
         visible={showSnackbar}
         onDismiss={() => setShowSnackbar(false)}
-        duration={3000}
-        style={{ backgroundColor: theme.colors.inverseSurface }}
-        action={{
-          label: "OK",
-          onPress: () => setShowSnackbar(false),
-          textColor: theme.colors.inversePrimary,
-        }}
-      >
-        <Text style={{ color: theme.colors.inverseOnSurface }}>
-          {snackbarMessage}
-        </Text>
-      </Snackbar>
+        message={snackbarMessage}
+      />
     </SafeAreaView>
   );
 }
@@ -732,7 +748,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    // Aumenta el paddingBottom para dar más espacio al final del scroll,
+    // considerando el FAB para que no lo cubra si el contenido es corto.
+    // Un valor mayor que el bottom del FAB + su altura es ideal.
+    paddingBottom: 120,
   },
   header: {
     borderBottomLeftRadius: 24,
@@ -770,16 +789,21 @@ const styles = StyleSheet.create({
   },
 
   searchSection: {
-    padding: 20, // Más padding como en NutritionDetailsCard
-    borderRadius: 26, // Bordes redondeados
-    marginHorizontal: 16, // Margen lateral consistente
-    marginVertical: 20, // Más espacio vertical
+    padding: 20,
+    borderRadius: 26,
+    marginHorizontal: 16,
+    marginVertical: 20,
+    overflow: "hidden", // ¡Importante para que el blur funcione correctamente dentro de los bordes!
+    position: "relative", // Necesario para que `StyleSheet.absoluteFill` funcione en `BlurView`
+    minHeight: 150, // Opcional: Dale una altura mínima si el contenido es variable
+    justifyContent: "center", // Centra el contenido verticalmente
   },
   searchContainer: {
-    marginBottom: 20, // Más margen como en NutritionDetailsCard
+    marginBottom: 20,
+    zIndex: 1, // Asegura que el contenido esté por encima del blur
   },
   searchbar: {
-    elevation: 0,
+    elevation: 0, // Quitamos la elevación del Searchbar para un look más plano
     borderRadius: 16,
     height: 56,
   },
@@ -789,6 +813,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexWrap: "wrap",
     gap: 12,
+    zIndex: 1, // Asegura que el contenido esté por encima del blur
   },
   sortButton: {
     borderRadius: 28,
@@ -904,15 +929,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 20,
   },
-
-  bottomSpacing: {
-    height: 90,
-  },
   fab: {
     position: "absolute",
-    margin: 20,
-    right: 0,
-    bottom: 50,
     borderRadius: 16,
   },
 });

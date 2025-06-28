@@ -1,15 +1,15 @@
+import { AppHeader } from "@/components/AppHeader";
 import { NutritionDetailsCard } from "@/components/NutritionDetailsCard";
 import { SearchProgressIndicator } from "@/components/SearchProgressIndicator";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useFoodDetails, useFoodSearch } from "@/hooks/useFDCStore";
 import { SearchResultFood } from "@/types/fdc";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
-  Appbar,
   Button,
   Card,
   Chip,
@@ -720,38 +720,17 @@ export default function FruitDetailsScreen() {
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      {/* Stack.Screen para configurar el header dinámicamente */}
-      <Stack.Screen
-        options={{
-          title: decodedFruitName,
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: theme.colors.surface,
-          },
-          headerTintColor: theme.colors.onSurface,
-          headerTitleStyle: {
-            fontWeight: "600",
-          },
-          headerLeft: () => (
-            <Appbar.BackAction
-              onPress={handleBackPress}
-              iconColor={theme.colors.onSurface}
-            />
-          ),
-          headerRight: () => (
-            <Appbar.Action
-              icon="refresh"
-              onPress={handleRefreshPress}
-              disabled={isSearching || isLoadingFood}
-              iconColor={
-                isSearching || isLoadingFood
-                  ? theme.colors.onSurfaceDisabled
-                  : theme.colors.onSurface
-              }
-            />
-          ),
-          presentation: "card",
-          animation: "slide_from_right",
+      <AppHeader
+        title={decodedFruitName}
+        leftAction={{
+          icon: "arrow-left",
+          onPress: handleBackPress,
+          accessibilityLabel: "Volver atrás",
+        }}
+        rightAction={{
+          icon: "refresh",
+          onPress: handleRefreshPress,
+          accessibilityLabel: "Actualizar información",
         }}
       />
 

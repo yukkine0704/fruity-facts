@@ -6,7 +6,6 @@ import { Stack, router } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
-  Appbar,
   Button,
   Card,
   Chip,
@@ -36,7 +35,7 @@ export default function CompareScreen() {
   };
 
   const handleRemoveFruit = (fruit: Fruit) => {
-    removeFromComparison(fruit.id);
+    removeFromComparison(fruit.id.toString());
     showMessage(`${fruit.name} eliminado de la comparación`);
   };
 
@@ -229,7 +228,7 @@ export default function CompareScreen() {
                 variant="bodySmall"
                 style={{ color: theme.colors.onSurface }}
               >
-                Más calorías ({stats.highestCalories.calories} kcal)
+                Más calorías ({stats.highestCalories.nutritions.calories} kcal)
               </Text>
             </View>
 
@@ -244,22 +243,7 @@ export default function CompareScreen() {
                 variant="bodySmall"
                 style={{ color: theme.colors.onSurface }}
               >
-                Más proteína ({stats.highestProtein.protein}g)
-              </Text>
-            </View>
-
-            <View style={styles.statItem}>
-              <Text
-                variant="titleMedium"
-                style={{ color: theme.colors.tertiary, fontWeight: "bold" }}
-              >
-                {stats.highestFiber.name}
-              </Text>
-              <Text
-                variant="bodySmall"
-                style={{ color: theme.colors.onSurface }}
-              >
-                Más fibra ({stats.highestFiber.fiber}g)
+                Más proteína ({stats.highestProtein.nutritions.protein}g)
               </Text>
             </View>
 
@@ -324,10 +308,10 @@ export default function CompareScreen() {
                   </Text>
                   <View style={styles.fruitChips}>
                     <Chip compact icon="fire" textStyle={{ fontSize: 11 }}>
-                      {fruit.calories || 0} kcal
+                      {fruit.nutritions.calories || 0} kcal
                     </Chip>
                     <Chip compact icon="dumbbell" textStyle={{ fontSize: 11 }}>
-                      {fruit.protein || 0}g proteína
+                      {fruit.nutritions.protein || 0}g proteína
                     </Chip>
                   </View>
                 </View>
@@ -364,22 +348,6 @@ export default function CompareScreen() {
           headerTitleStyle: {
             fontWeight: "600",
           },
-          headerLeft: () => (
-            <Appbar.BackAction
-              onPress={() => router.back()}
-              iconColor={theme.colors.onSurface}
-            />
-          ),
-          headerRight: () =>
-            comparedFruits.length > 0 ? (
-              <Appbar.Action
-                icon="delete"
-                onPress={handleClearAll}
-                iconColor={theme.colors.error}
-              />
-            ) : undefined,
-          presentation: "card",
-          animation: "slide_from_right",
         }}
       />
 

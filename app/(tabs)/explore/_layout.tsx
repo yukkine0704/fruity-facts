@@ -2,6 +2,7 @@ import FruitDetailsScreen from "@/app/FruitDetailsScreen";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ExploreStackParamList } from "@/types/navigation";
 import { createStackNavigator } from "@react-navigation/stack";
+import { useRouter } from "expo-router";
 import React from "react";
 import ExploreScreen from "../explore";
 
@@ -9,6 +10,15 @@ const Stack = createStackNavigator<ExploreStackParamList>();
 
 export default function ExploreStack() {
   const { theme } = useTheme();
+  const router = useRouter();
+
+  const handleBackPress = () => {
+    router.back();
+  };
+
+  const handleRefreshPress = () => {
+    console.log("Refresh pressed");
+  };
 
   return (
     <Stack.Navigator
@@ -21,6 +31,7 @@ export default function ExploreStack() {
           fontWeight: "bold",
         },
         headerShadowVisible: false,
+        headerShown: false,
       }}
     >
       <Stack.Screen
@@ -33,10 +44,9 @@ export default function ExploreStack() {
       <Stack.Screen
         name="FruitDetails"
         component={FruitDetailsScreen}
-        options={({ route }) => ({
-          title: route.params?.fruitName || "Detalles",
-          headerShown: true,
-        })}
+        options={{
+          headerShown: false,
+        }}
       />
     </Stack.Navigator>
   );
