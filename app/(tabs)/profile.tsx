@@ -54,9 +54,13 @@ export default function ProfileScreen() {
     setShowThemeDialog(true);
   }, []);
 
+  // ✅ Corrección: Usar getThemeDisplayName correctamente y agregar un pequeño delay
   const handleQuickThemeToggle = useCallback(() => {
     cycleTheme();
-    showMessage(`Tema cambiado a: ${getThemeDisplayName}`);
+    // Usar setTimeout para asegurar que el tema se haya actualizado antes de mostrar el mensaje
+    setTimeout(() => {
+      showMessage(`Tema cambiado a: ${getThemeDisplayName}`);
+    }, 100);
   }, [cycleTheme, showMessage, getThemeDisplayName]);
 
   const handleNameChange = useCallback(() => {
@@ -154,7 +158,7 @@ export default function ProfileScreen() {
           { color: theme.colors.onPrimaryContainer, opacity: 0.7 },
         ]}
       >
-        Miembro desde
+        Miembro desde{" "}
         {user?.joinDate ? new Date(user.joinDate).toLocaleDateString() : "hoy"}
       </Text>
 
@@ -165,10 +169,11 @@ export default function ProfileScreen() {
           { backgroundColor: theme.colors.surfaceVariant },
         ]}
         textStyle={{ color: theme.colors.onSurfaceVariant }}
-        children={getThemeDisplayName}
         compact
         disabled
-      />
+      >
+        {getThemeDisplayName}
+      </Chip>
 
       <Button
         mode="contained-tonal"

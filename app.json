@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/splashLight.png",
       "resizeMode": "contain",
       "backgroundColor": "#fefbff"
     },
@@ -27,7 +27,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#fefbff"
       },
       "package": "com.yukkine0704.fruityfacts",
@@ -48,12 +48,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/splashLight.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#fefbff",
           "dark": {
-            "image": "./assets/images/splash-icon.png",
+            "image": "./assets/images/splashDark.png",
             "backgroundColor": "#1c1b1f"
           }
         }

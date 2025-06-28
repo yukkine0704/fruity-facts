@@ -56,7 +56,7 @@ export default function HomeScreen() {
               elevation={theme.dark ? 1 : 2}
             >
               <Image
-                source={require("@/assets/images/partial-react-logo.png")}
+                source={require("@/assets/images/icon.png")}
                 style={styles.reactLogo}
                 contentFit="contain"
               />
