@@ -13,7 +13,8 @@ import {
 interface FDCState {
   // Estados
   foods: AbridgedFoodItem[];
-  searchResults: SearchResult[];
+  // Ahora searchResults es un solo objeto SearchResult, no un array
+  searchResults: SearchResult | null;
   currentFood: FoodItem | null;
   isLoading: boolean;
   error: string | null;
@@ -57,7 +58,7 @@ interface FDCState {
 
 const initialState = {
   foods: [],
-  searchResults: [],
+  searchResults: null,
   currentFood: null,
   isLoading: false,
   error: null,
@@ -96,8 +97,9 @@ export const useFDCStore = create<FDCState>()(
 
             const result = await fdcService.searchFoodsByCriteria(criteria);
 
+            // Se almacena el objeto de resultado completo
             set({
-              searchResults: [result], // Envolver en array para mantener compatibilidad
+              searchResults: result,
               searchCriteria: criteria,
               currentPage: result?.currentPage || 1,
               totalPages: result?.totalPages || 0,
@@ -141,6 +143,7 @@ export const useFDCStore = create<FDCState>()(
             setError(null);
 
             const foods = await fdcService.getFoodsByIds(fdcIds, format);
+            // El servicio ya devuelve FoodItem[], que es un supertipo de AbridgedFoodItem, por lo que la asignación es segura.
             set({
               foods: foods as AbridgedFoodItem[],
               isLoading: false,
@@ -188,7 +191,7 @@ export const useFDCStore = create<FDCState>()(
           const nextPage = currentPage + 1;
 
           // Si hay resultados de búsqueda, continuar con búsqueda
-          if (searchResults.length > 0) {
+          if (searchResults) {
             const newCriteria = {
               ...searchCriteria,
               pageNumber: nextPage,
@@ -214,7 +217,7 @@ export const useFDCStore = create<FDCState>()(
           const prevPage = currentPage - 1;
 
           // Si hay resultados de búsqueda, continuar con búsqueda
-          if (searchResults.length > 0) {
+          if (searchResults) {
             const newCriteria = {
               ...searchCriteria,
               pageNumber: prevPage,
@@ -238,7 +241,7 @@ export const useFDCStore = create<FDCState>()(
           if (page < 1 || page > totalPages) return;
 
           // Si hay resultados de búsqueda, continuar con búsqueda
-          if (searchResults.length > 0) {
+          if (searchResults) {
             const newCriteria = {
               ...searchCriteria,
               pageNumber: page,
@@ -259,7 +262,7 @@ export const useFDCStore = create<FDCState>()(
         clearCurrentFood: () => set({ currentFood: null }),
         clearSearchResults: () =>
           set({
-            searchResults: [],
+            searchResults: null,
             currentPage: 1,
             totalPages: 0,
             totalHits: 0,

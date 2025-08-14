@@ -1,6 +1,7 @@
 import { useFDCStore } from "../stores/fdcStore";
 import {
   AbridgedFoodNutrient,
+  FoodItem,
   FoodListCriteria,
   FoodNutrient,
   FoodSearchCriteria,
@@ -47,7 +48,6 @@ export const useFoodSearch = () => {
   };
 
   const searchFruit = async (fruitName: string) => {
-    // Intentar múltiples variaciones del nombre de la fruta
     const searchTerms = [
       fruitName,
       `${fruitName} fresh`,
@@ -66,17 +66,20 @@ export const useFoodSearch = () => {
 
       if (
         searchResults &&
-        searchResults.length > 0 &&
-        searchResults[0]?.foods &&
-        searchResults[0].foods.length > 0
+        searchResults.foods &&
+        searchResults.foods.length > 0
       ) {
         break;
       }
     }
   };
 
+  const currentFoods = searchResults?.foods || [];
+  const hasResults = !!searchResults && currentFoods.length > 0;
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
+
   return {
-    // Estados
     searchResults,
     searchCriteria,
     currentPage,
@@ -84,7 +87,6 @@ export const useFoodSearch = () => {
     totalHits,
     isLoading,
     error,
-    // Acciones
     search,
     quickSearch,
     searchFruit,
@@ -93,11 +95,10 @@ export const useFoodSearch = () => {
     goToPage,
     clearSearchResults,
     updateSearchCriteria,
-    // Utilidades
-    hasResults: searchResults.length > 0,
-    hasNextPage: currentPage < totalPages,
-    hasPreviousPage: currentPage > 1,
-    currentFoods: searchResults[0]?.foods || [],
+    hasResults,
+    hasNextPage,
+    hasPreviousPage,
+    currentFoods,
   };
 };
 
@@ -117,7 +118,19 @@ export const useFoodDetails = () => {
     }
   };
 
-  // Helper function para verificar si un nutriente es del tipo FoodNutrient
+  // Helper para verificar si el FoodItem tiene la propiedad foodNutrients.
+  // Es más simple y seguro.
+  const hasFoodNutrients = (
+    food: FoodItem
+  ): food is FoodItem & {
+    foodNutrients: (AbridgedFoodNutrient | FoodNutrient)[];
+  } => {
+    return (
+      "foodNutrients" in food && Array.isArray((food as any).foodNutrients)
+    );
+  };
+
+  // Helper para verificar el tipo de nutriente
   const isFoodNutrient = (
     nutrient: AbridgedFoodNutrient | FoodNutrient
   ): nutrient is FoodNutrient => {
@@ -131,9 +144,10 @@ export const useFoodDetails = () => {
     loadFood,
     clearCurrentFood,
     hasFood: currentFood !== null,
-    // Utilidades para mostrar información
     getNutrientByName: (name: string) => {
-      if (!currentFood?.foodNutrients) return null;
+      if (!currentFood || !hasFoodNutrients(currentFood)) {
+        return null;
+      }
 
       return currentFood.foodNutrients.find((nutrient) => {
         if (isFoodNutrient(nutrient)) {
@@ -141,13 +155,14 @@ export const useFoodDetails = () => {
             ?.toLowerCase()
             .includes(name.toLowerCase());
         } else {
-          // Para AbridgedFoodNutrient, usar la propiedad 'name' directamente
           return nutrient.name?.toLowerCase().includes(name.toLowerCase());
         }
       });
     },
     getMainNutrients: () => {
-      if (!currentFood?.foodNutrients) return [];
+      if (!currentFood || !hasFoodNutrients(currentFood)) {
+        return [];
+      }
 
       const mainNutrients = [
         "Energy",
@@ -168,7 +183,6 @@ export const useFoodDetails = () => {
             nutrient.nutrient?.name?.includes(main)
           );
         } else {
-          // Para AbridgedFoodNutrient
           return mainNutrients.some((main) => nutrient.name?.includes(main));
         }
       });
