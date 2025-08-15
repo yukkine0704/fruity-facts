@@ -1,10 +1,10 @@
+import { darkTheme, lightTheme } from "@/constants/themes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React from "react";
 import { useColorScheme } from "react-native";
 import { Provider as PaperProvider } from "react-native-paper";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { useFruityTheme } from "../constants/themes";
 
 type ThemeMode = "light" | "dark" | "system";
 
@@ -12,13 +12,13 @@ type ThemeStore = {
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
-  cycleTheme: () => void; // Nueva función para ciclar entre los 3 modos
+  cycleTheme: () => void;
 };
 
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
-      themeMode: "system",
+      themeMode: "light",
       setThemeMode: (mode: ThemeMode) => set({ themeMode: mode }),
       toggleTheme: () => {
         const current = get().themeMode;
@@ -48,8 +48,6 @@ export const useThemeStore = create<ThemeStore>()(
 export const useTheme = () => {
   const systemColorScheme = useColorScheme();
   const { themeMode, setThemeMode, toggleTheme, cycleTheme } = useThemeStore();
-  const { lightTheme, darkTheme } = useFruityTheme();
-
   const isDarkMode = React.useMemo(() => {
     if (themeMode === "system") {
       return systemColorScheme === "dark";

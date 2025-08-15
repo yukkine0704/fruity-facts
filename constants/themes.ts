@@ -1,66 +1,60 @@
-import { useMaterial3Theme } from "@pchmn/expo-material3-theme";
+// themes/index.js
 import { MD3DarkTheme, MD3LightTheme } from "react-native-paper";
 
-const SEED_COLOR = "#840032";
-
-export const useFruityTheme = () => {
-  const { theme: material3Theme } = useMaterial3Theme({
-    sourceColor: SEED_COLOR,
-    fallbackSourceColor: SEED_COLOR,
-  });
-
-  const hasMaterial3Colors =
-    material3Theme &&
-    typeof material3Theme === "object" &&
-    "light" in material3Theme &&
-    "dark" in material3Theme;
-
-  const lightTheme = {
-    ...MD3LightTheme,
-    colors: {
-      ...MD3LightTheme.colors,
-      ...(hasMaterial3Colors && material3Theme.light
-        ? material3Theme.light
-        : {}),
-    },
-  };
-
-  const darkTheme = {
-    ...MD3DarkTheme,
-    colors: {
-      ...MD3DarkTheme.colors,
-      ...(hasMaterial3Colors && material3Theme.dark ? material3Theme.dark : {}),
-    },
-  };
-
-  return {
-    lightTheme,
-    darkTheme,
-  };
+// Colores base de tu paleta
+const baseColors = {
+  // Colores principales y de acento
+  primary: "#4CAF50", // Verde brillante
+  secondary: "#00695C", // Verde azulado oscuro
+  tertiary: "#E91E63", // Rosa
+  outline: "#BDBDBD",
+  error: "#B00020",
+  // Colores para contenedores y variantes
+  primaryContainer: "#C8E6C9",
+  secondaryContainer: "#82B1FF",
+  tertiaryContainer: "#F8BBD0",
 };
 
-export const { lightTheme, darkTheme } = (() => {
-  const { theme } = useMaterial3Theme({
-    sourceColor: SEED_COLOR,
-    fallbackSourceColor: SEED_COLOR,
-  });
+// Colores de tu nueva paleta (blanco y negro no puros)
+const pureWhite = "#F3FCF0"; // Blanco ligeramente verdoso
+const pureBlack = "#071E22"; // Verde azulado oscuro
 
-  const hasColors = theme && "light" in theme && "dark" in theme;
+// Tema Claro
+export const lightTheme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    ...baseColors,
+    // Aquí usamos tus colores para el tema claro
+    background: pureWhite, // Fondo principal crema/blanco
+    onBackground: pureBlack, // Texto y elementos sobre fondo claro
+    surface: pureWhite, // Superficies como tarjetas
+    onSurface: pureBlack, // Texto sobre superficies
+    onPrimary: pureWhite, // Texto sobre el color primario
+    onSecondary: pureWhite,
+    onTertiary: pureWhite,
+    onPrimaryContainer: pureBlack,
+    onSecondaryContainer: pureBlack,
+    onTertiaryContainer: pureBlack,
+  },
+};
 
-  return {
-    lightTheme: {
-      ...MD3LightTheme,
-      colors: {
-        ...MD3LightTheme.colors,
-        ...(hasColors ? theme.light : {}),
-      },
-    },
-    darkTheme: {
-      ...MD3DarkTheme,
-      colors: {
-        ...MD3DarkTheme.colors,
-        ...(hasColors ? theme.dark : {}),
-      },
-    },
-  };
-})();
+// Tema Oscuro
+export const darkTheme = {
+  ...MD3DarkTheme,
+  colors: {
+    ...MD3DarkTheme.colors,
+    ...baseColors,
+    // Aquí usamos tus colores para el tema oscuro
+    background: pureBlack, // Fondo principal oscuro
+    onBackground: pureWhite, // Texto sobre fondo oscuro
+    surface: "#1E1E1E", // Superficies ligeramente más claras que el fondo
+    onSurface: pureWhite, // Texto sobre superficies oscuras
+    onPrimary: pureBlack,
+    onSecondary: pureWhite,
+    onTertiary: pureWhite,
+    onPrimaryContainer: pureBlack,
+    onSecondaryContainer: pureBlack,
+    onTertiaryContainer: pureBlack,
+  },
+};

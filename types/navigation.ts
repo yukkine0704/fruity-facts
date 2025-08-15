@@ -1,4 +1,4 @@
 export type ExploreStackParamList = {
-  ExploreMain: undefined;
-  FruitDetails: { fruitName: string };
+  SearchMain: undefined;
+  FoodDetails: { fdcId: number };
 };
