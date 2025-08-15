@@ -442,6 +442,29 @@ export type FoodItem =
 export const isBrandedFoodItem = (food: FoodItem): food is BrandedFoodItem => {
   return food.dataType === "Branded";
 };
+/**
+ * Verifica si un `FoodItem` tiene la propiedad `foodNutrients` de forma segura.
+ * @param food El objeto de alimento a verificar.
+ * @returns `true` si es un `FoodItem` con `foodNutrients`, `false` en caso contrario.
+ */
+export const hasFoodNutrients = (
+  food: FoodItem
+): food is FoodItem & {
+  foodNutrients: (AbridgedFoodNutrient | FoodNutrient)[];
+} => {
+  return "foodNutrients" in food && Array.isArray((food as any).foodNutrients);
+};
+
+/**
+ * Verifica si un nutriente es de tipo `FoodNutrient` (formato completo).
+ * @param nutrient El objeto de nutriente a verificar.
+ * @returns `true` si es un `FoodNutrient`, `false` en caso contrario.
+ */
+export const isFoodNutrient = (
+  nutrient: AbridgedFoodNutrient | FoodNutrient
+): nutrient is FoodNutrient => {
+  return "nutrient" in nutrient && !!(nutrient as FoodNutrient).nutrient;
+};
 
 /**
  * Verifica si un `FoodItem` es de tipo `FoundationFoodItem`.

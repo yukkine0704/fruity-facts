@@ -1,3 +1,5 @@
+// app/_layout.tsx
+
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import { useStatusBarHeight } from "@/hooks/useStatusBarHeight";
 import { hexToRgba } from "@/utils/hexConverter";
@@ -7,15 +9,11 @@ import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { PaperProvider } from "react-native-paper";
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
+// Componente para el overlay de blur en la barra de estado
 function StatusBarBlurOverlay() {
   const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
-
   const statusBarHeight = useStatusBarHeight();
 
   if (statusBarHeight === 0) {
@@ -31,7 +29,7 @@ function StatusBarBlurOverlay() {
   return (
     <View style={[styles.statusBarOverlay, { height: statusBarHeight }]}>
       <BlurView
-        intensity={Platform.OS === "android" ? 25 : 15} // Más intensidad en Android
+        intensity={Platform.OS === "android" ? 25 : 15}
         tint={blurTint}
         style={[
           styles.statusBarBlur,
@@ -45,7 +43,7 @@ function StatusBarBlurOverlay() {
   );
 }
 
-// Wrapper para el contenido principal
+// Wrapper para el contenido principal de la app
 function AppContent() {
   return (
     <>
@@ -55,7 +53,7 @@ function AppContent() {
         translucent={true}
       />
 
-      {/* Overlay de blur para status bar - funciona en iOS y Android */}
+      {/* Overlay de blur para status bar */}
       <StatusBarBlurOverlay />
 
       <Stack
@@ -68,7 +66,7 @@ function AppContent() {
         }}
       >
         <Stack.Screen
-          name="(tabs)"
+          name="index"
           options={{
             headerShown: false,
             contentStyle: {
@@ -76,36 +74,7 @@ function AppContent() {
             },
           }}
         />
-        <Stack.Screen
-          name="fruit-details/[fruitName]"
-          options={{
-            headerShown: false,
-            presentation: "card",
-            contentStyle: {
-              backgroundColor: "transparent",
-            },
-          }}
-        />
-        <Stack.Screen
-          name="search/index"
-          options={{
-            headerShown: false,
-            presentation: "card",
-            contentStyle: {
-              backgroundColor: "transparent",
-            },
-          }}
-        />
-        <Stack.Screen
-          name="compare/index"
-          options={{
-            headerShown: false,
-            presentation: "card",
-            contentStyle: {
-              backgroundColor: "transparent",
-            },
-          }}
-        />
+        {/* Aquí puedes añadir otras pantallas a medida que las vayas creando */}
       </Stack>
     </>
   );
@@ -132,7 +101,7 @@ const styles = StyleSheet.create({
     zIndex: 999,
     ...Platform.select({
       android: {
-        elevation: 10, // Sombra en Android
+        elevation: 10,
       },
       ios: {
         shadowColor: "#000",
